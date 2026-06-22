@@ -23,7 +23,10 @@ export default function Layout({ onLogout }) {
 
       {/* Navegación lateral (escritorio) */}
       <aside className="sidebar">
-        <div className="marca">Zona Cliente</div>
+        <div className="marca">
+          <img src="/swirl.png" alt="" width="28" height="28" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
+          Zona Cliente
+        </div>
         {enlaces.map((e) => (
           <NavLink key={e.to} to={e.to} end={e.end} className={claseNav}>
             <span className="icono">{e.icono}</span>

@@ -41,7 +41,7 @@ export default function Login() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
       <form onSubmit={enviar} className="tarjeta" style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-          <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--azul)' }}>Zona Cliente</div>
+          <img src="/logo.png" alt="Zona Cliente" style={{ width: 160, height: 160, objectFit: 'contain' }} />
           <p className="placeholder" style={{ margin: '0.25rem 0 0' }}>
             {modo === 'entrar' ? 'Inicia sesión para continuar' : 'Crea tu cuenta'}
           </p>
