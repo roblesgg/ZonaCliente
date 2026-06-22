@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Descargar código
         uses: actions/checkout@v4
@@ -52,3 +54,21 @@ jobs:
           name: zona-cliente-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      - name: Leer versión de la app
+        run: |
+          VERSION=$(node -e "console.log(require('./package.json').version)")
+          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Renombrar la APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk zona-cliente-latest.apk
+
+      - name: Publicar Release en GitHub
+        run: |
+          gh release create "v$APP_VERSION" \
+            --title "Zona Cliente v$APP_VERSION" \
+            --notes "APK de Zona Cliente v$APP_VERSION. Generada automáticamente desde GitHub Actions." \
+            2>/dev/null || true
+          gh release upload "v$APP_VERSION" zona-cliente-latest.apk --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
