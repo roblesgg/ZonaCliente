@@ -37,7 +37,22 @@ src/
   lib/supabase.js     Cliente de conexión a Supabase
 ```
 
+## APK Android
+
+La APK se compila **automáticamente en la nube** con GitHub Actions en cada push a `main`
+(no hace falta Android Studio). Para descargarla:
+
+1. Ve a la pestaña **Actions** del repositorio en GitHub.
+2. Abre la última ejecución de *"Compilar APK Android"*.
+3. En **Artifacts**, descarga `zona-cliente-apk` → contiene `app-debug.apk`.
+4. Pásala al móvil e instálala (permite "instalar apps de orígenes desconocidos").
+
+> Requiere configurar los *secrets* `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` en
+> *Settings → Secrets and variables → Actions*.
+
 ## Estado actual
 
-Esqueleto navegable con datos de ejemplo. Pendiente: conectar las pantallas a Supabase
-(altas, edición y búsqueda real) y empaquetar la APK con Capacitor.
+CRM funcional con datos reales en Supabase: hospitales (con servicios y contactos),
+empresas, encargos (con fases, ofertas y notas de seguimiento), panel con gráficos,
+calendario y login con seguridad (RLS). Pendiente: buscador real, edición de registros
+y adjuntar fotos/documentos.
