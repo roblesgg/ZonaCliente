@@ -1,0 +1,21 @@
+# Dependencias
+node_modules
+dist
+dist-ssr
+
+# Variables de entorno y credenciales (NUNCA subir)
+.env
+.env.local
+.env.*.local
+credenciales/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / SO
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db

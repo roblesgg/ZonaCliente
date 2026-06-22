@@ -1,0 +1,407 @@
+:root {
+  /* Paleta */
+  --azul: #1d4ed8;
+  --azul-osc: #1e40af;
+  --azul-claro: #eff6ff;
+  --texto: #1f2937;
+  --texto-suave: #6b7280;
+  --borde: #e5e7eb;
+  --fondo: #f8fafc;
+  --blanco: #ffffff;
+  --verde: #16a34a;
+  --ambar: #d97706;
+  --rojo: #dc2626;
+
+  /* Medidas */
+  --radio: 12px;
+  --sombra: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ancho-sidebar: 240px;
+  --alto-navbar: 64px;
+
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--texto);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--fondo);
+  -webkit-text-size-adjust: 100%;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0 0 0.5rem;
+  line-height: 1.2;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ====== Estructura general ====== */
+.app {
+  min-height: 100vh;
+}
+
+.contenido {
+  padding: 1.25rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ====== Sidebar (escritorio) ====== */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--ancho-sidebar);
+  background: var(--blanco);
+  border-right: 1px solid var(--borde);
+  padding: 1.25rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sidebar .marca {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--azul);
+  padding: 0.5rem 0.75rem 1.25rem;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--radio);
+  color: var(--texto-suave);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.nav-item .icono {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.nav-item:hover {
+  background: var(--fondo);
+  color: var(--texto);
+}
+
+.nav-item.activo {
+  background: var(--azul-claro);
+  color: var(--azul);
+}
+
+/* Cuando hay sidebar, el contenido se desplaza */
+.con-sidebar {
+  margin-left: var(--ancho-sidebar);
+}
+
+/* ====== Barra inferior (móvil) ====== */
+.bottom-nav {
+  display: none;
+}
+
+/* ====== Tarjetas ====== */
+.tarjeta {
+  background: var(--blanco);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.titulo-pagina {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.placeholder {
+  color: var(--texto-suave);
+  font-size: 0.95rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Botón cerrar sesión: como nav-item pero reseteando estilos de <button> */
+button.nav-item {
+  background: transparent;
+  border: none;
+  width: 100%;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+/* Botón "Salir" flotante para móvil (oculto en escritorio) */
+.logout-movil {
+  display: none;
+}
+
+/* ====== Botones y formularios ====== */
+.btn-primario {
+  background: var(--azul);
+  color: var(--blanco);
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radio);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.btn-primario:hover {
+  background: var(--azul-osc);
+}
+
+.btn-primario:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.btn-icono {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  padding: 0.2rem;
+  border-radius: 8px;
+}
+
+.btn-icono:hover {
+  background: var(--fondo);
+}
+
+.campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.campo {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  font-size: 1rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  outline: none;
+  font-family: inherit;
+}
+
+.campo:focus {
+  border-color: var(--azul);
+}
+
+/* ====== Calendario ====== */
+.cal-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.cal-nav {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--borde);
+  background: var(--blanco);
+  border-radius: var(--radio);
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--azul);
+}
+
+.cal-nav:hover {
+  background: var(--azul-claro);
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-dias {
+  margin-bottom: 4px;
+}
+
+.cal-dia-nombre {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  padding: 0.25rem 0;
+}
+
+.cal-celda {
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--borde);
+  background: var(--blanco);
+  border-radius: 8px;
+  padding: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+}
+
+.cal-celda.vacia {
+  border: none;
+  background: transparent;
+}
+
+.cal-celda.hoy {
+  border-color: var(--azul);
+}
+
+.cal-celda.sel {
+  background: var(--azul-claro);
+  border-color: var(--azul);
+}
+
+.cal-numero {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.cal-puntos {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.cal-punto {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* ====== Gráficos (barras simples) ====== */
+.barra-fila {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.55rem;
+}
+
+.barra-etiqueta {
+  flex: 0 0 130px;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+  text-align: right;
+}
+
+.barra-pista {
+  flex: 1;
+  background: var(--fondo);
+  border-radius: 999px;
+  height: 18px;
+  overflow: hidden;
+}
+
+.barra-relleno {
+  height: 100%;
+  border-radius: 999px;
+  min-width: 2px;
+}
+
+.barra-valor {
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* ====== Responsive: móvil (vertical) ====== */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+
+  .con-sidebar {
+    margin-left: 0;
+  }
+
+  .contenido {
+    padding: 1rem;
+    padding-bottom: calc(var(--alto-navbar) + 1rem);
+  }
+
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--alto-navbar);
+    background: var(--blanco);
+    border-top: 1px solid var(--borde);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .bottom-nav .nav-item {
+    flex: 1;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.5rem 0;
+    border-radius: 0;
+    font-size: 0.7rem;
+    justify-content: center;
+  }
+
+  .bottom-nav .nav-item.activo {
+    background: transparent;
+    color: var(--azul);
+  }
+
+  /* En móvil, el botón Salir aparece arriba a la derecha */
+  .logout-movil {
+    display: block;
+    position: fixed;
+    top: 0.6rem;
+    right: 0.6rem;
+    z-index: 10;
+    background: var(--blanco);
+    border: 1px solid var(--borde);
+    color: var(--texto-suave);
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: var(--sombra);
+  }
+
+  /* Hueco arriba para que el botón Salir no tape el título */
+  .contenido {
+    padding-top: 2.75rem;
+  }
+}

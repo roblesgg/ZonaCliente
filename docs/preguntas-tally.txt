@@ -1,0 +1,67 @@
+Explica con tus palabras en qué consiste tu trabajo, como si se lo contaras a alguien que no lo conoce.
+
+¿Cuántas peticiones o encargos nuevos te suelen entrar al día o a la semana?
+
+¿Qué es lo que MÁS te molesta o más tiempo te hace perder hoy en tu día a día?
+
+Si esta aplicación solo pudiera ayudarte con UNA cosa, ¿cuál te quitaría más peso de encima?
+
+Cuando apuntas un hospital, ¿qué datos suyos necesitas tener guardados? (por ejemplo: dirección, ciudad, teléfono de centralita, datos de facturación, horarios de entrega de material…). Cuéntame todos los que se te ocurran.
+
+Un mismo hospital, ¿lo tratas como un solo sitio, o por dentro tiene varios servicios o departamentos que llevas por separado (por ejemplo, quirófano, traumatología…)? Explícamelo.
+
+¿Te interesa agrupar los hospitales de alguna forma, por ejemplo por zona o por provincia? ¿Por qué?
+
+De cada persona de contacto en un hospital, ¿qué datos suyos apuntas o necesitas? (nombre, cargo, teléfono, móvil, email, WhatsApp, horario para llamarle, notas…). Dime todos.
+
+Una misma persona, ¿puede trabajar en varios hospitales a la vez, o cada contacto está siempre en un único hospital? Cuéntame algún caso real si lo hay.
+
+¿Distingues entre tipos de contacto? Por ejemplo: el que decide la compra, el médico que usa el material, o el de administración que paga. Explícame cómo los diferencias.
+
+De cada empresa o distribuidor al que compras, ¿qué datos necesitas guardar? (nombre, persona de contacto, teléfonos, correos, web, qué marcas o productos venden, plazos, descuentos…). Dime todo lo que se te ocurra.
+
+¿Te vendría bien poder ver, desde una empresa, todo lo que les has comprado o todos los hospitales que han acabado comprándoles a través de ti? Cuéntame para qué te serviría.
+
+Cuando buscas un producto, ¿sueles pedir presupuesto a varias empresas a la vez para comparar, o normalmente a una sola? Explícamelo.
+
+¿Guardas en algún sitio los precios o presupuestos que te dan, para acordarte en el futuro? ¿Cómo lo haces ahora?
+
+Coge el último encargo real que tuviste y cuéntame, paso a paso, todo lo que hiciste desde que te llegó hasta que se cerró o se canceló. Tómate tu tiempo, esto es lo más importante de todo.
+
+¿Por qué "fases" o "estados" va pasando un encargo desde que entra hasta que termina? Dime con tus palabras cómo llamarías a cada fase (por ejemplo: nuevo, buscando, presupuesto enviado, vendido, cancelado…).
+
+De cada encargo, ¿qué información necesitas tener apuntada? (qué producto, cantidad, foto, referencia, qué hospital y persona lo pide, a qué empresa se lo pides, precio, notas especiales…). Cuéntame todo.
+
+¿Te ayudaría poder escribir notas con fecha dentro de cada encargo, para llevar el seguimiento? (por ejemplo: "el día 12 llamé y no contestan", "el día 13 envié el presupuesto"). ¿Lo usarías?
+
+¿Te interesa poder ver el historial de todo lo que le has buscado o vendido a cada hospital en el pasado, por si un año después te piden lo mismo? Cuéntame.
+
+¿Manejas fechas importantes en cada encargo? (cuándo entró, fecha límite, fecha de entrega prometida…). ¿Cuáles?
+
+Cuando abres la aplicación por la mañana, ¿qué te gustaría ver lo primero para empezar el día bien organizado?
+
+¿Qué recordatorios o avisos te ayudarían? Por ejemplo: presupuestos enviados hace días sin respuesta, encargos que vencen hoy, o clientes a los que hace mucho que no llamas. Cuéntame cuáles te servirían.
+
+¿Cómo prefieres que te avise: solo dentro de la app, con una notificación en el móvil, o por correo?
+
+Cuando estás fuera con el móvil, ¿cuáles son las tres cosas que más rápido necesitas poder hacer con un solo dedo? Dime las tres.
+
+¿Te gustaría que al tocar el teléfono de un cliente o empresa empezara la llamada directamente? ¿Y poder abrir su WhatsApp o su correo con un solo toque?
+
+¿Hay sitios donde trabajas sin cobertura o sin internet (sótanos, dentro de hospitales…) donde necesitarías usar la app igualmente? Cuéntame.
+
+Las fotos de los instrumentos, ¿las haces tú con la cámara en el momento, o normalmente te las mandan por WhatsApp o correo y las subes desde la galería?
+
+¿Vas a usar tú solo esta aplicación, o en el futuro podría usarla también un socio, un empleado o un comercial? Cuéntame.
+
+¿Necesitas que la información esté sincronizada entre el ordenador y el móvil automáticamente, o te vale con usarla en un solo sitio?
+
+¿Te preocupa la seguridad de los datos (entrar con contraseña, copias de seguridad)? ¿Hay algún dato especialmente delicado que manejes?
+
+¿Cómo llevas todo esto ahora mismo? (Excel, una libreta, notas del móvil, WhatsApp…). Descríbemelo.
+
+¿Hay alguna cuenta, total o resumen que haces a mano y te gustaría que la aplicación calculara sola? (por ejemplo, cuántas ventas llevas este mes).
+
+¿Preparas algún documento, como un presupuesto en PDF o un correo con un formato fijo, que te gustaría que la aplicación generara por ti?
+
+¿Hay algo más que te gustaría que esta aplicación hiciera y que no te haya preguntado? Cuéntamelo libremente.

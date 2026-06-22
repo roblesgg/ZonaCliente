@@ -1,0 +1,54 @@
+name: Compilar APK Android
+
+# Compila la APK en la nube en cada push a main (o manualmente).
+# La APK queda como "artifact" descargable en la pestaña Actions.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Crear .env con las claves (desde secrets del repo)
+        run: |
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" >> .env
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env
+
+      - name: Compilar la web
+        run: npm run build
+
+      - name: Preparar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Sincronizar Capacitor
+        run: npx cap sync android
+
+      - name: Compilar APK de depuración
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Subir la APK como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zona-cliente-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
