@@ -1,18 +1,11 @@
 {
   "rewrites": [
     { "source": "/descargar", "destination": "/descargar.html" },
+    { "source": "/descargar-apk", "destination": "/api/descargar" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "redirects": [
-    {
-      "source": "/zona-cliente-latest.apk",
-      "destination": "https://github.com/roblesgg/ZonaCliente/releases/latest/download/zona-cliente-latest.apk",
-      "permanent": false
-    },
-    {
-      "source": "/apk",
-      "destination": "https://github.com/roblesgg/ZonaCliente/releases/latest/download/zona-cliente-latest.apk",
-      "permanent": false
-    }
+    { "source": "/apk", "destination": "/descargar-apk", "permanent": false },
+    { "source": "/zona-cliente-latest.apk", "destination": "/descargar-apk", "permanent": false }
   ]
 }

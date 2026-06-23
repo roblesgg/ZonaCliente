@@ -25,7 +25,9 @@ export default function Cartera() {
         >🏢 Empresas</button>
       </div>
 
-      {tab === 'hospitales' ? <Hospitales /> : <Empresas />}
+      <div className="pagina" key={tab}>
+        {tab === 'hospitales' ? <Hospitales /> : <Empresas />}
+      </div>
     </>
   )
 }

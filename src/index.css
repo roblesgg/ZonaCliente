@@ -27,6 +27,8 @@
 
 * {
   box-sizing: border-box;
+  /* Quita el recuadro azul/gris que Android pinta al tocar un elemento. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
@@ -159,29 +161,49 @@ button {
 }
 
 .nav-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.7rem 0.85rem;
-  border-radius: var(--radio);
+  padding: 0.7rem 0.95rem;
+  border-radius: 999px;
   color: var(--texto-suave);
   font-weight: 600;
   font-size: 0.95rem;
+  transition: background 0.18s ease, color 0.18s ease;
 }
 
 .nav-item .icono {
   font-size: 1.25rem;
   line-height: 1;
+  transition: transform 0.18s ease;
 }
 
-.nav-item:hover {
+.sidebar .nav-item:hover {
   background: var(--fondo);
   color: var(--texto);
 }
 
-.nav-item.activo {
+.sidebar .nav-item.activo {
   background: var(--azul-claro);
   color: var(--azul);
+}
+
+/* Acento a la izquierda del elemento activo (en lugar de un bloque cuadrado). */
+.sidebar .nav-item.activo::before {
+  content: '';
+  position: absolute;
+  left: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 55%;
+  border-radius: 999px;
+  background: var(--azul);
+}
+
+.sidebar .nav-item.activo .icono {
+  transform: scale(1.08);
 }
 
 .con-sidebar {
@@ -670,6 +692,75 @@ a.kpis:hover .kpi {
   font-weight: 600;
 }
 
+/* ====== Animaciones y microinteracciones ====== */
+
+/* Entrada suave al cambiar de pestaña/página. */
+.pagina {
+  animation: pagina-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes pagina-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Pulsación de botones (feedback táctil). */
+.btn-primario,
+.subtab,
+.mover,
+.topbar-salir,
+.topbar-buscar {
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease,
+    transform 0.12s ease, box-shadow 0.18s ease;
+}
+
+.btn-primario:active,
+.mover:active:not(:disabled),
+.cal-nav:active {
+  transform: scale(0.96);
+}
+
+.subtab:active {
+  transform: scale(0.97);
+}
+
+/* Tarjetas: elevación al pasar el ratón / pulsar. */
+.card,
+.kpi,
+.res-item {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.card:hover,
+a.res-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-md);
+}
+
+.card:active {
+  transform: scale(0.99);
+}
+
+a.kpis:hover .kpi {
+  transform: translateY(-2px);
+}
+
+/* Quien prefiera menos movimiento, lo desactivamos. */
+@media (prefers-reduced-motion: reduce) {
+  .pagina {
+    animation: none;
+  }
+  * {
+    transition: none !important;
+  }
+}
+
 /* ====== Responsive: móvil (vertical) ====== */
 @media (max-width: 768px) {
   .sidebar {
@@ -716,15 +807,33 @@ a.kpis:hover .kpi {
   .bottom-nav .nav-item {
     flex: 1;
     flex-direction: column;
-    gap: 0.15rem;
-    padding: 0.5rem 0;
+    gap: 0.2rem;
+    padding: 0.45rem 0;
     border-radius: 0;
     font-size: 0.72rem;
     justify-content: center;
+    color: var(--texto-suave);
+  }
+
+  /* La cápsula redondeada va detrás del icono, no en todo el botón. */
+  .bottom-nav .nav-item .icono {
+    padding: 0.2rem 1.1rem;
+    border-radius: 999px;
+    background: transparent;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .bottom-nav .nav-item .etq {
+    transition: color 0.2s ease, font-weight 0.2s ease;
   }
 
   .bottom-nav .nav-item.activo {
     background: transparent;
     color: var(--azul);
+  }
+
+  .bottom-nav .nav-item.activo .icono {
+    background: var(--azul-claro);
+    transform: translateY(-1px);
   }
 }
