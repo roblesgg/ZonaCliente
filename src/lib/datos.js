@@ -80,6 +80,37 @@ export async function borrarContacto(id) {
 }
 
 // ---------------------------------------------------------------
+// CLIENTES (personas/entidades cliente, distintas de los hospitales)
+// ---------------------------------------------------------------
+
+export async function listarClientes() {
+  const { data, error } = await supabase
+    .from('clientes')
+    .select('*')
+    .order('nombre', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function crearCliente(cliente) {
+  const { data, error } = await supabase.from('clientes').insert(cliente).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function actualizarCliente(id, cambios) {
+  const { data, error } = await supabase
+    .from('clientes').update(cambios).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function borrarCliente(id) {
+  const { error } = await supabase.from('clientes').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ---------------------------------------------------------------
 // EMPRESAS / PROVEEDORES
 // ---------------------------------------------------------------
 
@@ -206,9 +237,134 @@ export async function borrarNota(id) {
 export async function listarRecordatorios() {
   const { data, error } = await supabase
     .from('notas')
-    .select('id, texto, recordatorio, encargos(producto)')
+    .select('id, texto, recordatorio, encargos(producto, descripcion)')
     .not('recordatorio', 'is', null)
     .order('recordatorio', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+// ---------------------------------------------------------------
+// CONTACTOS (listados para selección en oportunidades)
+// ---------------------------------------------------------------
+
+export async function listarContactosDeHospital(hospitalId) {
+  const { data, error } = await supabase
+    .from('contactos')
+    .select('id, nombre, apellidos, cargo, servicios(nombre)')
+    .eq('hospital_id', hospitalId)
+    .order('nombre', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+// ---------------------------------------------------------------
+// PRODUCTOS (catálogo reutilizable)
+// ---------------------------------------------------------------
+
+export async function listarProductos() {
+  const { data, error } = await supabase
+    .from('productos')
+    .select('*')
+    .order('nombre', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function crearProducto(producto) {
+  const { data, error } = await supabase.from('productos').insert(producto).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function actualizarProducto(id, cambios) {
+  const { data, error } = await supabase
+    .from('productos').update(cambios).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function borrarProducto(id) {
+  const { error } = await supabase.from('productos').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ---------------------------------------------------------------
+// LÍNEAS DE OPORTUNIDAD (productos con cantidad)
+// ---------------------------------------------------------------
+
+export async function listarProductosDeOportunidad(encargoId) {
+  const { data, error } = await supabase
+    .from('oportunidad_productos')
+    .select('*, productos(nombre, referencia, marca, precio)')
+    .eq('encargo_id', encargoId)
+    .order('creado_en', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function añadirProductoAOportunidad(linea) {
+  const { data, error } = await supabase
+    .from('oportunidad_productos').insert(linea).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function actualizarLineaProducto(id, cambios) {
+  const { data, error } = await supabase
+    .from('oportunidad_productos').update(cambios).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function quitarProductoDeOportunidad(id) {
+  const { error } = await supabase.from('oportunidad_productos').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ---------------------------------------------------------------
+// CONTACTOS INVOLUCRADOS EN UNA OPORTUNIDAD
+// ---------------------------------------------------------------
+
+export async function listarContactosDeOportunidad(encargoId) {
+  const { data, error } = await supabase
+    .from('oportunidad_contactos')
+    .select('id, contacto_id, contactos(nombre, apellidos, cargo, movil, telefonos, email)')
+    .eq('encargo_id', encargoId)
+    .order('creado_en', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function añadirContactoAOportunidad(encargoId, contactoId) {
+  const { data, error } = await supabase
+    .from('oportunidad_contactos')
+    .insert({ encargo_id: encargoId, contacto_id: contactoId })
+    .select().single()
+  if (error) throw error
+  return data
+}
+
+export async function quitarContactoDeOportunidad(id) {
+  const { error } = await supabase.from('oportunidad_contactos').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ---------------------------------------------------------------
+// AJUSTES (configuración global: % de comisión, etc.)
+// ---------------------------------------------------------------
+
+export async function obtenerAjustes() {
+  const { data, error } = await supabase.from('ajustes').select('*').eq('id', 1).maybeSingle()
+  if (error) throw error
+  return data || { id: 1, comision_porcentaje: 0, nombre: '', extra: {} }
+}
+
+export async function actualizarAjustes(cambios) {
+  const { data, error } = await supabase
+    .from('ajustes')
+    .upsert({ id: 1, ...cambios })
+    .select().single()
   if (error) throw error
   return data
 }

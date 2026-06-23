@@ -10,6 +10,8 @@ import Ventas from './pages/Ventas.jsx'
 import EncargoDetalle from './pages/EncargoDetalle.jsx'
 import Calendario from './pages/Calendario.jsx'
 import Buscar from './pages/Buscar.jsx'
+import Ajustes from './pages/Ajustes.jsx'
+import Productos from './pages/Productos.jsx'
 
 export default function App() {
   const [session, setSession] = useState(null)
@@ -49,6 +51,8 @@ export default function App() {
         <Route path="hospitales/:id" element={<HospitalDetalle />} />
         <Route path="agenda" element={<Calendario />} />
         <Route path="buscar" element={<Buscar />} />
+        <Route path="ajustes" element={<Ajustes />} />
+        <Route path="productos" element={<Productos />} />
 
         {/* Rutas antiguas -> nuevas, por si hay enlaces o marcadores guardados */}
         <Route path="encargos" element={<Navigate to="/ventas" replace />} />

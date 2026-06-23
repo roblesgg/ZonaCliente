@@ -37,6 +37,7 @@ export default function Buscar() {
     if (!q) return null
     const encargos = datos.encargos.filter((e) =>
       norm(e.producto).includes(q) ||
+      norm(e.descripcion).includes(q) ||
       norm(e.caracteristicas).includes(q) ||
       norm(e.hospitales?.nombre).includes(q))
     const hospitales = datos.hospitales.filter((h) =>
@@ -64,7 +65,7 @@ export default function Buscar() {
         className="buscador-grande"
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
-        placeholder="Producto, hospital, empresa, ciudad…"
+        placeholder="Oportunidad, hospital, socio, ciudad…"
         autoFocus
       />
 
@@ -72,8 +73,8 @@ export default function Buscar() {
         <p className="placeholder" style={{ marginTop: '1.5rem' }}>Cargando datos…</p>
       ) : !res ? (
         <p className="placeholder" style={{ marginTop: '1.5rem' }}>
-          Escribe (o dicta con el micrófono del teclado) para buscar entre tus encargos,
-          hospitales y empresas.
+          Escribe (o dicta con el micrófono del teclado) para buscar entre tus oportunidades,
+          hospitales y socios.
         </p>
       ) : total === 0 ? (
         <p className="placeholder" style={{ marginTop: '1.5rem' }}>Sin resultados para “{texto}”.</p>
@@ -81,7 +82,7 @@ export default function Buscar() {
         <div style={{ marginTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {res.encargos.length > 0 && (
             <section>
-              <h3 className="res-grupo">📊 Encargos ({res.encargos.length})</h3>
+              <h3 className="res-grupo">📊 Oportunidades ({res.encargos.length})</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {res.encargos.map((e) => {
                   const f = faseInfo(e.fase)
@@ -120,7 +121,7 @@ export default function Buscar() {
 
           {res.empresas.length > 0 && (
             <section>
-              <h3 className="res-grupo">🏢 Empresas ({res.empresas.length})</h3>
+              <h3 className="res-grupo">🤝 Socios ({res.empresas.length})</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {res.empresas.map((em) => (
                   <Link key={em.id} to="/cartera?t=empresas" className="tarjeta res-item">

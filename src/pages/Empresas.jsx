@@ -66,7 +66,7 @@ export default function Empresas() {
     return (
       <div className="tarjeta">
         <h3>⚙️ Falta configurar la base de datos</h3>
-        <p className="placeholder">Configura Supabase para guardar tus empresas (ver README).</p>
+        <p className="placeholder">Configura Supabase para guardar tus socios (ver README).</p>
       </div>
     )
   }
@@ -75,13 +75,13 @@ export default function Empresas() {
     <>
       <div className="cab-seccion">
         <button className="btn-primario" onClick={() => setMostrarForm((v) => !v)}>
-          {mostrarForm ? 'Cancelar' : '+ Nueva empresa'}
+          {mostrarForm ? 'Cancelar' : '+ Nuevo socio'}
         </button>
       </div>
 
       {mostrarForm && (
         <form className="tarjeta" style={{ margin: '1rem 0' }} onSubmit={enviar}>
-          <h3>Nueva empresa</h3>
+          <h3>Nuevo socio</h3>
           <div className="campos">
             <input className="campo" placeholder="Nombre *" value={form.nombre}
               onChange={(e) => setForm({ ...form, nombre: e.target.value })} autoFocus />
@@ -112,7 +112,7 @@ export default function Empresas() {
         <p className="placeholder">Cargando…</p>
       ) : empresas.length === 0 ? (
         <p className="placeholder" style={{ marginTop: '1rem' }}>
-          Aún no hay empresas. Pulsa “+ Nueva” para añadir la primera.
+          Aún no hay socios. Pulsa “+ Nuevo socio” para añadir el primero.
         </p>
       ) : (
         <div className="grid" style={{ marginTop: '1rem' }}>

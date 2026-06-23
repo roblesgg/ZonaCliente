@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
+import DripFooter from './DripFooter.jsx'
 
 // Navegación reducida a 4 secciones para que sea cómoda y visual.
 // "Buscar" deja de ser una pestaña y pasa al buscador del encabezado.
@@ -62,8 +63,10 @@ export default function Layout({ onLogout }) {
 
         <button className="topbar-buscar" onClick={() => navigate('/buscar')}>
           <span className="lupa">🔍</span>
-          <span className="ph">Buscar hospital, empresa, encargo…</span>
+          <span className="ph">Buscar hospital, socio, oportunidad…</span>
         </button>
+
+        <button className="topbar-icono" onClick={() => navigate('/ajustes')} title="Ajustes">⚙️</button>
 
         {onLogout && (
           <button className="topbar-salir" onClick={onLogout} title="Cerrar sesión">
@@ -89,6 +92,7 @@ export default function Layout({ onLogout }) {
           <div className="pagina" key={location.pathname}>
             <Outlet />
           </div>
+          <DripFooter />
         </div>
       </main>
 

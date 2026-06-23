@@ -100,7 +100,7 @@ export default function Inicio() {
       {!hayDatos ? (
         <div className="tarjeta" style={{ marginBottom: '1rem' }}>
           <p className="placeholder" style={{ margin: 0 }}>
-            Aún no hay encargos. Crea el primero en la pestaña <Link to="/ventas" style={{ color: 'var(--azul)', fontWeight: 600 }}>Ventas</Link> y
+            Aún no hay oportunidades. Crea la primera en la pestaña <Link to="/ventas" style={{ color: 'var(--azul)', fontWeight: 600 }}>Ventas</Link> y
             este panel se irá rellenando solo.
           </p>
         </div>
@@ -145,7 +145,7 @@ export default function Inicio() {
       {hayDatos && (
         <div className="grid" style={{ marginTop: '1rem' }}>
           <section className="tarjeta">
-            <h3>📊 Encargos por fase</h3>
+            <h3>📊 Oportunidades por fase</h3>
             <GraficoBarras datos={datosFases} />
           </section>
           <section className="tarjeta">

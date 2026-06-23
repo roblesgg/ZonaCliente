@@ -1,6 +1,7 @@
 // Pantalla de inicio de sesión. Permite entrar o (la primera vez) crear la cuenta.
 import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
+import DripFooter from '../components/DripFooter.jsx'
 
 export default function Login() {
   const [modo, setModo] = useState('entrar') // 'entrar' | 'crear'
@@ -38,7 +39,8 @@ export default function Login() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
       <form onSubmit={enviar} className="tarjeta" style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
           <img src="/logo.png" alt="Zona Cliente" style={{ width: 160, height: 160, objectFit: 'contain' }} />
@@ -69,6 +71,8 @@ export default function Login() {
           </button>
         </p>
       </form>
+      </div>
+      <DripFooter />
     </div>
   )
 }

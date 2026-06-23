@@ -10,13 +10,15 @@ import {
 } from '../lib/datos.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 import AccionesContacto from '../components/AccionesContacto.jsx'
+import CamposExtra from '../components/CamposExtra.jsx'
 
 const ROLES = [
   { v: 'decide', t: 'Decide la compra' },
   { v: 'usa', t: 'Usa el material' },
   { v: 'paga', t: 'Paga / tramita' },
 ]
-const CONTACTO_VACIO = { nombre: '', apellidos: '', cargo: '', movil: '', email: '', roles: [] }
+const CONTACTO_VACIO = { nombre: '', apellidos: '', cargo: '', telefonos: [''], email: '', roles: [], extra: {} }
+const SERVICIO_VACIO = { nombre: '', telefono: '' }
 
 export default function HospitalDetalle() {
   const { id } = useParams()
@@ -25,7 +27,7 @@ export default function HospitalDetalle() {
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
 
-  const [nuevoServicio, setNuevoServicio] = useState('')
+  const [nuevoServicio, setNuevoServicio] = useState(SERVICIO_VACIO)
   // Formulario de contacto: guardamos a qué servicio pertenece el que se está creando.
   const [formContactoEn, setFormContactoEn] = useState(null)
   const [contacto, setContacto] = useState(CONTACTO_VACIO)
@@ -53,10 +55,14 @@ export default function HospitalDetalle() {
 
   async function añadirServicio(e) {
     e.preventDefault()
-    if (!nuevoServicio.trim()) return
+    if (!nuevoServicio.nombre.trim()) return
     try {
-      await crearServicio({ hospital_id: id, nombre: nuevoServicio.trim() })
-      setNuevoServicio('')
+      await crearServicio({
+        hospital_id: id,
+        nombre: nuevoServicio.nombre.trim(),
+        telefono: nuevoServicio.telefono.trim() || null,
+      })
+      setNuevoServicio(SERVICIO_VACIO)
       await cargar()
     } catch (e) { setError(e.message) }
   }
@@ -82,11 +88,36 @@ export default function HospitalDetalle() {
     e.preventDefault()
     if (!contacto.nombre.trim()) return
     try {
-      await crearContacto({ ...contacto, hospital_id: id, servicio_id: servicioId })
+      const telefonos = (contacto.telefonos || []).map((t) => t.trim()).filter(Boolean)
+      await crearContacto({
+        hospital_id: id,
+        servicio_id: servicioId,
+        nombre: contacto.nombre,
+        apellidos: contacto.apellidos || null,
+        cargo: contacto.cargo || null,
+        email: contacto.email || null,
+        roles: contacto.roles,
+        telefonos,
+        extra: contacto.extra || {},
+      })
       setFormContactoEn(null)
       setContacto(CONTACTO_VACIO)
       await cargar()
     } catch (e) { setError(e.message) }
+  }
+
+  function setTelefono(i, v) {
+    setContacto((c) => {
+      const tel = [...(c.telefonos || [])]
+      tel[i] = v
+      return { ...c, telefonos: tel }
+    })
+  }
+  function añadirTelefono() {
+    setContacto((c) => ({ ...c, telefonos: [...(c.telefonos || []), ''] }))
+  }
+  function quitarTelefono(i) {
+    setContacto((c) => ({ ...c, telefonos: (c.telefonos || []).filter((_, j) => j !== i) }))
   }
 
   async function quitarContacto(cid) {
@@ -116,9 +147,11 @@ export default function HospitalDetalle() {
       )}
 
       {/* Alta de servicio */}
-      <form onSubmit={añadirServicio} style={{ display: 'flex', gap: '0.5rem', margin: '1rem 0' }}>
-        <input className="campo" placeholder="Nuevo servicio / especialidad (ej. Dermatología)"
-          value={nuevoServicio} onChange={(e) => setNuevoServicio(e.target.value)} />
+      <form onSubmit={añadirServicio} style={{ display: 'flex', gap: '0.5rem', margin: '1rem 0', flexWrap: 'wrap' }}>
+        <input className="campo" placeholder="Nuevo servicio (ej. Dermatología)" style={{ flex: 2, minWidth: 160 }}
+          value={nuevoServicio.nombre} onChange={(e) => setNuevoServicio({ ...nuevoServicio, nombre: e.target.value })} />
+        <input className="campo" placeholder="Teléfono del servicio" style={{ flex: 1, minWidth: 130 }}
+          value={nuevoServicio.telefono} onChange={(e) => setNuevoServicio({ ...nuevoServicio, telefono: e.target.value })} />
         <button className="btn-primario" type="submit">+ Servicio</button>
       </form>
 
@@ -129,7 +162,15 @@ export default function HospitalDetalle() {
           {servicios.map((s) => (
             <section key={s.id} className="tarjeta">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ margin: 0 }}>{s.nombre}</h3>
+                <div>
+                  <h3 style={{ margin: 0 }}>{s.nombre}</h3>
+                  {s.telefono && (
+                    <a href={`tel:${s.telefono.replace(/\s/g, '')}`} className="badge"
+                       style={{ background: '#dcfce7', color: 'var(--verde)', marginTop: '0.3rem', display: 'inline-block' }}>
+                      📞 {s.telefono}
+                    </a>
+                  )}
+                </div>
                 <div style={{ display: 'flex', gap: '0.4rem' }}>
                   <button className="btn-icono" onClick={() => abrirFormContacto(s.id)} title="Añadir contacto">➕👤</button>
                   <button className="btn-icono" onClick={() => quitarServicio(s.id)} title="Borrar servicio">🗑️</button>
@@ -154,7 +195,7 @@ export default function HospitalDetalle() {
                           ) : null
                         })}
                       </div>
-                      <AccionesContacto telefono={c.telefono} movil={c.movil} whatsapp={c.whatsapp} email={c.email} />
+                      <AccionesContacto telefonos={c.telefonos} email={c.email} />
                     </div>
                   ))}
                 </div>
@@ -173,10 +214,25 @@ export default function HospitalDetalle() {
                       onChange={(e) => setContacto({ ...contacto, apellidos: e.target.value })} />
                     <input className="campo" placeholder="Cargo" value={contacto.cargo}
                       onChange={(e) => setContacto({ ...contacto, cargo: e.target.value })} />
-                    <input className="campo" placeholder="Móvil" value={contacto.movil}
-                      onChange={(e) => setContacto({ ...contacto, movil: e.target.value })} />
                     <input className="campo" placeholder="Email" value={contacto.email}
                       onChange={(e) => setContacto({ ...contacto, email: e.target.value })} />
+                  </div>
+
+                  {/* Teléfonos: se pueden añadir varios */}
+                  <div style={{ marginTop: '0.6rem' }}>
+                    <label className="placeholder" style={{ fontSize: '0.8rem' }}>Teléfonos</label>
+                    {(contacto.telefonos || []).map((tel, i) => (
+                      <div key={i} style={{ display: 'flex', gap: '0.4rem', marginTop: '0.3rem' }}>
+                        <input className="campo" placeholder={`Teléfono ${i + 1}`} value={tel}
+                          onChange={(e) => setTelefono(i, e.target.value)} style={{ flex: 1 }} />
+                        {contacto.telefonos.length > 1 && (
+                          <button type="button" className="btn-icono" title="Quitar teléfono"
+                            onClick={() => quitarTelefono(i)}>🗑️</button>
+                        )}
+                      </div>
+                    ))}
+                    <button type="button" className="btn-sec-claro" style={{ marginTop: '0.4rem' }}
+                      onClick={añadirTelefono}>+ Añadir teléfono</button>
                   </div>
                   <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', margin: '0.6rem 0' }}>
                     {ROLES.map((r) => (

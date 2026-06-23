@@ -6,14 +6,13 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabaseConfigurado } from '../lib/supabase.js'
 import {
-  listarEncargos, crearEncargo, actualizarEncargo, borrarEncargo, listarHospitales,
+  listarEncargos, crearEncargo, actualizarEncargo, borrarEncargo, listarHospitales, obtenerAjustes,
 } from '../lib/datos.js'
 import { FASES, indiceFase } from '../lib/fases.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
 const FORM_VACIO = {
-  producto: '', hospital_id: '', caracteristicas: '', cantidad: '',
-  fase: 'deteccion', fecha_limite: '', comision_esperada: '',
+  producto: '', hospital_id: '', fase: 'deteccion', fecha_limite: '', ingresos_totales: '',
 }
 
 const eur = (n) => Number(n || 0).toLocaleString('es-ES')
@@ -26,14 +25,16 @@ export default function Ventas() {
   const [form, setForm] = useState(FORM_VACIO)
   const [mostrarForm, setMostrarForm] = useState(false)
   const [guardando, setGuardando] = useState(false)
+  const [pct, setPct] = useState(0)
 
   async function cargar() {
     setCargando(true)
     setError(null)
     try {
-      const [encs, hosps] = await Promise.all([listarEncargos(), listarHospitales()])
+      const [encs, hosps, aj] = await Promise.all([listarEncargos(), listarHospitales(), obtenerAjustes()])
       setEncargos(encs)
       setHospitales(hosps)
+      setPct(Number(aj.comision_porcentaje) || 0)
     } catch (e) {
       setError(e.message)
     } finally {
@@ -52,14 +53,15 @@ export default function Ventas() {
     setGuardando(true)
     setError(null)
     try {
+      const ingresos = form.ingresos_totales ? Number(form.ingresos_totales) : null
+      const comision = ingresos != null && pct > 0 ? Math.round(ingresos * pct) / 100 : null
       await crearEncargo({
         producto: form.producto,
         hospital_id: form.hospital_id || null,
-        caracteristicas: form.caracteristicas || null,
-        cantidad: form.cantidad ? Number(form.cantidad) : null,
         fase: form.fase,
         fecha_limite: form.fecha_limite || null,
-        comision_esperada: form.comision_esperada ? Number(form.comision_esperada) : null,
+        ingresos_totales: ingresos,
+        comision_esperada: comision,
       })
       setForm(FORM_VACIO)
       setMostrarForm(false)
@@ -87,7 +89,7 @@ export default function Ventas() {
   }
 
   async function eliminar(id) {
-    if (!confirm('¿Borrar este encargo?')) return
+    if (!confirm('¿Borrar esta oportunidad?')) return
     try {
       await borrarEncargo(id)
       await cargar()
@@ -106,9 +108,9 @@ export default function Ventas() {
   return (
     <>
       <div className="cab-pagina">
-        <h1 className="titulo-pagina">📊 Pipeline de ventas</h1>
+        <h1 className="titulo-pagina">📊 Oportunidades</h1>
         <button className="btn-primario" onClick={() => setMostrarForm((v) => !v)}>
-          {mostrarForm ? 'Cancelar' : '+ Nuevo encargo'}
+          {mostrarForm ? 'Cancelar' : '+ Nueva oportunidad'}
         </button>
       </div>
 
@@ -121,32 +123,35 @@ export default function Ventas() {
 
       {mostrarForm && (
         <form className="tarjeta" style={{ margin: '1rem 0' }} onSubmit={enviar}>
-          <h3>Nuevo encargo</h3>
+          <h3>Nueva oportunidad</h3>
           <div className="campos">
-            <input className="campo" placeholder="Producto *" value={form.producto}
+            <input className="campo" placeholder="Título *" value={form.producto}
               onChange={(e) => setForm({ ...form, producto: e.target.value })} autoFocus />
             <select className="campo" value={form.hospital_id}
               onChange={(e) => setForm({ ...form, hospital_id: e.target.value })}>
               <option value="">— Hospital —</option>
               {hospitales.map((h) => <option key={h.id} value={h.id}>{h.nombre}</option>)}
             </select>
-            <input className="campo" placeholder="Características (ej. 5 ruedas, barandillas)"
-              value={form.caracteristicas}
-              onChange={(e) => setForm({ ...form, caracteristicas: e.target.value })} />
-            <input className="campo" type="number" placeholder="Cantidad" value={form.cantidad}
-              onChange={(e) => setForm({ ...form, cantidad: e.target.value })} />
             <select className="campo" value={form.fase}
               onChange={(e) => setForm({ ...form, fase: e.target.value })}>
               {FASES.map((f) => <option key={f.v} value={f.v}>{f.tLargo}</option>)}
             </select>
             <input className="campo" type="date" value={form.fecha_limite}
               onChange={(e) => setForm({ ...form, fecha_limite: e.target.value })} />
-            <input className="campo" type="number" placeholder="Comisión esperada (€)"
-              value={form.comision_esperada}
-              onChange={(e) => setForm({ ...form, comision_esperada: e.target.value })} />
+            <input className="campo" type="number" step="0.01" placeholder="Ingresos totales (€)"
+              value={form.ingresos_totales}
+              onChange={(e) => setForm({ ...form, ingresos_totales: e.target.value })} />
           </div>
+          {pct > 0 && form.ingresos_totales && (
+            <p className="placeholder" style={{ margin: '0.5rem 0 0', fontSize: '0.85rem' }}>
+              Comisión estimada ({pct}%): <strong>{(Math.round(Number(form.ingresos_totales) * pct) / 100).toLocaleString('es-ES')} €</strong>
+            </p>
+          )}
+          <p className="placeholder" style={{ margin: '0.5rem 0 0', fontSize: '0.85rem' }}>
+            Luego, en la ficha, podrás añadir productos y los contactos involucrados.
+          </p>
           <button className="btn-primario" type="submit" disabled={guardando} style={{ marginTop: '0.75rem' }}>
-            {guardando ? 'Guardando…' : 'Guardar encargo'}
+            {guardando ? 'Guardando…' : 'Guardar oportunidad'}
           </button>
         </form>
       )}
@@ -161,7 +166,7 @@ export default function Ventas() {
         <p className="placeholder">Cargando…</p>
       ) : encargos.length === 0 ? (
         <p className="placeholder" style={{ marginTop: '1rem' }}>
-          Aún no hay encargos. Pulsa “+ Nuevo encargo” para crear el primero.
+          Aún no hay oportunidades. Pulsa “+ Nueva oportunidad” para crear la primera.
         </p>
       ) : (
         <div className="pipeline">

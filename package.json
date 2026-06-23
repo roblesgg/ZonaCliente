@@ -1,9 +1,9 @@
 {
   "name": "zona-cliente",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
-  "description": "Zona Cliente — CRM para la gestión de hospitales, contactos, empresas y encargos.",
+  "description": "Zona Cliente — CRM para la gestión de clientes, hospitales, contactos, socios y oportunidades.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
