@@ -29,6 +29,22 @@ export default function App() {
     return () => sub.subscription.unsubscribe()
   }, [])
 
+  // Al entrar, pide permiso de notificaciones y programa los avisos del móvil
+  // a partir de los recordatorios (solo en la app nativa).
+  useEffect(() => {
+    if (!supabaseConfigurado || !session) return
+    ;(async () => {
+      try {
+        const noti = await import('./lib/notificaciones.js')
+        await noti.pedirPermisoNotificaciones()
+        const { listarRecordatorios } = await import('./lib/datos.js')
+        await noti.sincronizarRecordatorios(await listarRecordatorios())
+      } catch (e) {
+        console.warn('Notificaciones no disponibles', e)
+      }
+    })()
+  }, [session])
+
   if (cargando) {
     return <div className="contenido"><p className="placeholder">Cargando…</p></div>
   }

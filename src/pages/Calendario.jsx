@@ -1,9 +1,11 @@
 // Calendario mensual conectado a datos reales: reúne automáticamente las fechas
-// límite y de entrega de los encargos, y los recordatorios de las notas.
+// límite y de entrega de las oportunidades y los recordatorios de las notas, y
+// permite apuntar recordatorios sueltos en cualquier día (con aviso al móvil).
 
 import { useEffect, useState } from 'react'
 import { supabaseConfigurado } from '../lib/supabase.js'
-import { listarEncargos, listarRecordatorios } from '../lib/datos.js'
+import { listarEncargos, listarRecordatorios, crearNota, borrarNota } from '../lib/datos.js'
+import { pedirPermisoNotificaciones, sincronizarRecordatorios } from '../lib/notificaciones.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
 const MESES = [
@@ -22,7 +24,7 @@ function clave(anio, mes, dia) {
   return `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
 }
 
-// Construye un mapa { 'YYYY-MM-DD': [ {tipo, texto}, ... ] } desde los datos reales.
+// Construye un mapa { 'YYYY-MM-DD': [ {tipo, texto, notaId?}, ... ] } de los datos.
 function construirEventos(encargos, recordatorios) {
   const mapa = {}
   const añadir = (fecha, evento) => {
@@ -32,12 +34,13 @@ function construirEventos(encargos, recordatorios) {
   }
   for (const e of encargos) {
     añadir(e.fecha_limite, { tipo: 'limite', texto: `${e.producto} — fecha límite` })
-    añadir(e.fecha_entrega, { tipo: 'entrega', texto: `${e.producto} — entrega` })
   }
   for (const r of recordatorios) {
     añadir(r.recordatorio, {
       tipo: 'recordatorio',
       texto: r.texto + (r.encargos?.producto ? ` (${r.encargos.producto})` : ''),
+      notaId: r.id,
+      suelto: !r.encargos, // recordatorio suelto (no atado a una oportunidad)
     })
   }
   return mapa
@@ -50,19 +53,26 @@ export default function Calendario() {
   const [diaSel, setDiaSel] = useState(clave(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()))
   const [eventos, setEventos] = useState({})
   const [cargando, setCargando] = useState(true)
+  const [nuevoTexto, setNuevoTexto] = useState('')
+  const [guardando, setGuardando] = useState(false)
+
+  async function cargar() {
+    try {
+      const [encs, recs] = await Promise.all([listarEncargos(), listarRecordatorios()])
+      setEventos(construirEventos(encs, recs))
+      // Reprograma los avisos del móvil con los recordatorios al día.
+      sincronizarRecordatorios(recs)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setCargando(false)
+    }
+  }
 
   useEffect(() => {
     if (!supabaseConfigurado) { setCargando(false); return }
-    ;(async () => {
-      try {
-        const [encs, recs] = await Promise.all([listarEncargos(), listarRecordatorios()])
-        setEventos(construirEventos(encs, recs))
-      } catch (e) {
-        console.error(e)
-      } finally {
-        setCargando(false)
-      }
-    })()
+    pedirPermisoNotificaciones()
+    cargar()
   }, [])
 
   if (!supabaseConfigurado) return <SinConfigurar titulo="📅 Calendario" />
@@ -81,8 +91,29 @@ export default function Calendario() {
     setMes(nm); setAnio(na)
   }
 
+  async function añadirRecordatorio(e) {
+    e.preventDefault()
+    if (!nuevoTexto.trim()) return
+    setGuardando(true)
+    try {
+      await crearNota({ texto: nuevoTexto.trim(), recordatorio: diaSel, encargo_id: null })
+      setNuevoTexto('')
+      await cargar()
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  async function quitarRecordatorio(notaId) {
+    try { await borrarNota(notaId); await cargar() } catch (e) { console.error(e) }
+  }
+
   const claveHoy = clave(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
   const eventosDiaSel = eventos[diaSel] || []
+  const [aa, mm, dd] = diaSel.split('-')
+  const diaSelTexto = `${Number(dd)} de ${MESES[Number(mm) - 1]}`
 
   return (
     <>
@@ -126,7 +157,7 @@ export default function Calendario() {
           </div>
 
           <div className="tarjeta" style={{ marginTop: '1rem' }}>
-            <h3>Eventos del día</h3>
+            <h3>{diaSelTexto}</h3>
             {eventosDiaSel.length === 0 ? (
               <p className="placeholder">No hay nada apuntado este día.</p>
             ) : (
@@ -136,11 +167,30 @@ export default function Calendario() {
                     <span className="badge" style={{ background: TIPOS[e.tipo].fondo, color: TIPOS[e.tipo].color }}>
                       {TIPOS[e.tipo].etiqueta}
                     </span>
-                    <span>{e.texto}</span>
+                    <span style={{ flex: 1 }}>{e.texto}</span>
+                    {e.notaId && (
+                      <button className="btn-icono" title="Borrar recordatorio"
+                        onClick={() => quitarRecordatorio(e.notaId)}>🗑️</button>
+                    )}
                   </div>
                 ))}
               </div>
             )}
+
+            {/* Apuntar algo en este día */}
+            <form onSubmit={añadirRecordatorio}
+              style={{ marginTop: '1rem', borderTop: '1px solid var(--borde)', paddingTop: '0.75rem',
+                display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <input className="campo" style={{ flex: 1, minWidth: 160 }}
+                placeholder={`Apuntar algo el ${diaSelTexto}…`}
+                value={nuevoTexto} onChange={(e) => setNuevoTexto(e.target.value)} />
+              <button className="btn-primario" type="submit" disabled={guardando}>
+                {guardando ? '…' : '+ Apuntar'}
+              </button>
+            </form>
+            <p className="placeholder" style={{ fontSize: '0.8rem', marginTop: '0.5rem', marginBottom: 0 }}>
+              🔔 Si das permiso de notificaciones, te avisará en el móvil ese día.
+            </p>
           </div>
         </>
       )}

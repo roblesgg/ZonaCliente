@@ -312,32 +312,35 @@ a.kpis:hover .kpi {
 /* ====== Sub-pestañas (segmented control) ====== */
 .subtabs {
   display: flex;
-  width: fit-content;
-  max-width: 100%;
-  gap: 2px;
-  padding: 3px;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
   background: var(--gris-panel);
-  border-radius: 999px;
+  border-radius: 16px;
   margin-bottom: 1.25rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.subtabs::-webkit-scrollbar {
-  display: none;
 }
 
 .subtab {
+  flex: 1 1 auto;
+  text-align: center;
   border: none;
   background: transparent;
-  padding: 0.5rem 1.1rem;
-  border-radius: 999px;
+  padding: 0.5rem 0.7rem;
+  border-radius: 12px;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--texto-suave);
   cursor: pointer;
   white-space: nowrap;
-  flex-shrink: 0;
+}
+
+/* En móvil, repartir en 2 columnas (4 pestañas -> 2x2, todas visibles). */
+@media (max-width: 560px) {
+  .subtab {
+    flex: 1 1 40%;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.4rem;
+  }
 }
 
 .subtab.activo {
