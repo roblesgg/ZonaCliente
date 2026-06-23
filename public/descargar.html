@@ -3,413 +3,505 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Zona Cliente | CRM para tu equipo</title>
+    <title>Zona Cliente | El CRM para tu equipo comercial</title>
     <meta
       name="description"
-      content="CRM para gestionar hospitales, contactos, empresas y encargos. Mismo software en ordenador, móvil y como app Android."
+      content="Gestiona hospitales, empresas, contactos y encargos desde el ordenador o el móvil. Calendario, fases de venta y beneficio potencial, siempre sincronizado."
     />
 
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
 
     <style>
       :root {
-        --primary: #1d4ed8;
-        --secondary: #0ea5e9;
-        --bg: #020617;
-        --surface: rgba(255, 255, 255, 0.04);
-        --border: rgba(255, 255, 255, 0.08);
-        --text: #f8fafc;
-        --accent-gradient: linear-gradient(135deg, #1d4ed8, #0ea5e9);
+        --azul: #1d4ed8;
+        --azul-osc: #1e40af;
+        --azul-claro: #eff6ff;
+        --texto: #1f2937;
+        --suave: #6b7280;
+        --borde: #e5e7eb;
+        --fondo: #f8fafc;
+        --blanco: #ffffff;
+        --verde: #16a34a;
+        --ambar: #d97706;
+        --rojo: #dc2626;
+        --radio: 14px;
+        --sombra: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        --sombra-lg: 0 30px 60px -20px rgba(29, 78, 216, 0.28), 0 12px 24px -12px rgba(0, 0, 0, 0.12);
       }
 
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
 
       body {
-        font-family: 'Outfit', sans-serif;
-        background-color: var(--bg);
-        color: var(--text);
+        font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        color: var(--texto);
+        background: var(--fondo);
         line-height: 1.6;
         overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
       }
 
-      /* Animated Background Blobs */
-      .blob-container {
-        position: fixed;
-        width: 100vw;
-        height: 100vh;
-        z-index: -1;
-        overflow: hidden;
-        filter: blur(80px);
-      }
-
-      .blob {
-        position: absolute;
-        width: 500px;
-        height: 500px;
-        border-radius: 50%;
-        opacity: 0.15;
-        animation: float 20s infinite alternate;
-      }
-
-      .blob-1 {
-        background: var(--primary);
-        top: -10%;
-        left: -10%;
-      }
-
-      .blob-2 {
-        background: var(--secondary);
-        bottom: -10%;
-        right: -10%;
-        animation-delay: -5s;
-      }
-
-      @keyframes float {
-        0% { transform: translate(0, 0) scale(1); }
-        100% { transform: translate(100px, 50px) scale(1.2); }
-      }
-
-      .container {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 0 24px;
-      }
-
-      /* Navbar */
-      .header-container {
-        position: relative;
-        z-index: 1000;
-        width: 100%;
-        height: 120px;
-        transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
-      }
-
-      nav {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 40px 0;
-        width: 100%;
-        max-width: 1100px;
-        margin: 0 auto;
-        transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
-      }
-
-      .logo {
-        font-size: 2rem;
-        font-weight: 900;
-        letter-spacing: -1px;
-        background: var(--accent-gradient);
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        transition: all 0.6s cubic-bezier(0.2, 0, 0, 1);
-      }
-
-      /* Sticky State */
-      .header-container.sticky {
-        position: fixed;
-        top: 0;
-        left: 0;
-        height: 70px;
-        width: 100%;
-        background: rgba(2, 6, 23, 0.7);
-        backdrop-filter: blur(20px);
-        border-bottom: 1px solid var(--border);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      }
-
-      .header-container.sticky nav {
-        padding: 15px 24px;
-        justify-content: center;
-      }
-
-      .header-container.sticky .logo {
-        font-size: 1.4rem;
-        letter-spacing: 2px;
-        transform: translateY(0);
-      }
-
-      /* Hero Section */
-      .hero {
-        padding: 100px 0;
-        text-align: center;
-        min-height: 80vh;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-      }
-
-      h1 {
-        font-size: clamp(3.5rem, 10vw, 6rem);
-        font-weight: 900;
-        line-height: 0.9;
-        margin-bottom: 24px;
-        letter-spacing: -3px;
-        background: linear-gradient(to bottom, #fff, rgba(255,255,255,0.6));
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-
-      .hero p {
-        font-size: 1.25rem;
-        color: rgba(255, 255, 255, 0.5);
-        max-width: 600px;
-        margin-bottom: 48px;
-        animation: fadeIn 1s ease-out;
-      }
-
-      .download-btn {
-        position: relative;
-        display: inline-flex;
-        padding: 20px 48px;
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: white;
-        text-decoration: none;
-        background: var(--accent-gradient);
-        border-radius: 100px;
-        transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-        box-shadow: 0 20px 40px -10px rgba(29, 78, 216, 0.4);
-        overflow: hidden;
-      }
-
-      .download-btn:hover {
-        transform: translateY(-5px) scale(1.02);
-        box-shadow: 0 30px 60px -10px rgba(29, 78, 216, 0.6);
-      }
-
-      .download-btn::after {
+      /* Fondo: malla sutil azul + halo */
+      body::before {
         content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: rgba(255,255,255,0.1);
-        transform: rotate(45deg);
-        transition: 0.5s;
-        opacity: 0;
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        background:
+          radial-gradient(60% 50% at 80% -5%, rgba(29, 78, 216, 0.10), transparent 70%),
+          radial-gradient(50% 40% at 0% 10%, rgba(14, 116, 144, 0.07), transparent 70%);
+      }
+      body::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        background-image:
+          linear-gradient(to right, rgba(29, 78, 216, 0.04) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(29, 78, 216, 0.04) 1px, transparent 1px);
+        background-size: 44px 44px;
+        mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 30%, transparent 75%);
       }
 
-      .download-btn:hover::after {
-        opacity: 1;
-        left: 100%;
-      }
+      .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
-      .nav-btn {
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.1);
-        box-shadow: none;
+      /* ====== Navbar ====== */
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        backdrop-filter: blur(14px);
+        background: rgba(248, 250, 252, 0.72);
+        border-bottom: 1px solid transparent;
+        transition: border-color .3s, box-shadow .3s;
       }
-
-      .buttons-container {
-        display: flex;
-        gap: 20px;
-        justify-content: center;
-        align-items: center;
-        flex-wrap: wrap;
+      header.scrolled {
+        border-color: var(--borde);
+        box-shadow: 0 6px 20px -12px rgba(0, 0, 0, 0.18);
       }
-
-      /* Features Grid */
-      .features {
-        padding: 100px 0;
+      nav {
+        display: flex; align-items: center; justify-content: space-between;
+        height: 68px;
       }
-
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 32px;
+      .marca { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.15rem; letter-spacing: -0.4px; }
+      .marca img { width: 30px; height: 30px; border-radius: 8px; }
+      .marca b { color: var(--azul); }
+      .nav-cta {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: var(--azul); color: #fff; font-weight: 600; font-size: 0.92rem;
+        padding: 9px 18px; border-radius: 999px; transition: transform .25s, background .25s, box-shadow .25s;
+        box-shadow: 0 8px 18px -8px rgba(29, 78, 216, 0.6);
       }
+      .nav-cta:hover { background: var(--azul-osc); transform: translateY(-2px); }
 
-      .card {
-        position: relative;
-        padding: 48px;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 40px;
-        backdrop-filter: blur(12px);
-        transition: all 0.5s cubic-bezier(0.2, 0, 0, 1);
-        overflow: hidden;
+      /* ====== Hero ====== */
+      .hero { padding: 70px 0 40px; }
+      .hero-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center;
       }
-
-      .card:hover {
-        transform: translateY(-10px);
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(255, 255, 255, 0.2);
+      .pill {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: var(--azul-claro); color: var(--azul);
+        font-size: 0.8rem; font-weight: 700; padding: 6px 14px; border-radius: 999px;
+        border: 1px solid rgba(29, 78, 216, 0.14);
       }
-
-      .card-icon {
-        font-size: 3rem;
-        margin-bottom: 24px;
-        display: block;
+      .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--verde); box-shadow: 0 0 0 3px rgba(22,163,74,0.18); }
+      h1 {
+        font-size: clamp(2.4rem, 5vw, 3.6rem); font-weight: 900; letter-spacing: -1.8px;
+        line-height: 1.05; margin: 20px 0 16px;
       }
-
-      .card h3 {
-        font-size: 1.5rem;
-        font-weight: 800;
-        margin-bottom: 12px;
-        color: #fff;
+      h1 .grad {
+        background: linear-gradient(120deg, var(--azul), #0e7490);
+        -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
       }
+      .hero p.lead { font-size: 1.12rem; color: var(--suave); max-width: 480px; margin-bottom: 28px; }
 
-      .card p {
-        color: rgba(255,255,255,0.5);
-        font-weight: 500;
+      .botones { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+      .btn {
+        display: inline-flex; align-items: center; gap: 10px;
+        font-weight: 700; font-size: 1rem; padding: 15px 26px; border-radius: 12px;
+        transition: transform .25s cubic-bezier(.23,1,.32,1), box-shadow .25s, background .25s;
       }
+      .btn-primario { background: var(--azul); color: #fff; box-shadow: 0 16px 30px -12px rgba(29,78,216,0.55); }
+      .btn-primario:hover { transform: translateY(-3px); box-shadow: 0 24px 40px -12px rgba(29,78,216,0.65); background: var(--azul-osc); }
+      .btn-sec { background: var(--blanco); color: var(--texto); border: 1px solid var(--borde); box-shadow: var(--sombra); }
+      .btn-sec:hover { transform: translateY(-3px); border-color: #cbd5e1; }
+      .nota { font-size: 0.85rem; color: var(--suave); margin-top: 16px; }
+      .nota b { color: var(--texto); }
 
-      /* Suggestions Section */
-      .suggestions {
-        padding: 100px 0;
-        text-align: center;
+      /* ====== Mockup ventana (dashboard) ====== */
+      .ventana {
+        background: var(--blanco); border: 1px solid var(--borde); border-radius: 18px;
+        box-shadow: var(--sombra-lg); overflow: hidden; transform: perspective(1600px) rotateY(-9deg) rotateX(3deg);
+        transition: transform .6s cubic-bezier(.2,0,0,1);
       }
-
-      .glass-panel {
-        background: rgba(29, 78, 216, 0.04);
-        border: 1px solid rgba(29, 78, 216, 0.12);
-        padding: 80px 40px;
-        border-radius: 50px;
-        backdrop-filter: blur(20px);
+      .ventana:hover { transform: perspective(1600px) rotateY(-3deg) rotateX(1deg) translateY(-6px); }
+      .ventana-barra { display: flex; align-items: center; gap: 7px; padding: 12px 14px; border-bottom: 1px solid var(--borde); background: #fcfdff; }
+      .ventana-barra i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+      .ventana-barra .url {
+        margin-left: 10px; font-size: 0.72rem; color: var(--suave); background: var(--fondo);
+        border: 1px solid var(--borde); border-radius: 8px; padding: 4px 12px; flex: 1;
       }
+      .ventana-cuerpo { display: grid; grid-template-columns: 64px 1fr; min-height: 360px; }
+      .mini-side { border-right: 1px solid var(--borde); padding: 14px 0; display: flex; flex-direction: column; align-items: center; gap: 6px; background: #fcfdff; }
+      .mini-side span { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; font-size: 1.05rem; }
+      .mini-side span.on { background: var(--azul-claro); }
+      .mini-main { padding: 16px; }
+      .mini-h { font-weight: 800; font-size: 1.05rem; margin-bottom: 12px; }
+      .mini-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .mini-card { border: 1px solid var(--borde); border-radius: 12px; padding: 12px; box-shadow: var(--sombra); }
+      .mini-card h4 { font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; color: var(--texto); }
+      .chip { display: inline-block; font-size: 0.68rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; margin: 0 4px 4px 0; }
+      .chip.rojo { background: #fee2e2; color: var(--rojo); }
+      .chip.ambar { background: #fef3c7; color: var(--ambar); }
+      .chip.verde { background: #dcfce7; color: var(--verde); }
+      .mini-task { font-size: 0.74rem; color: var(--suave); padding: 4px 0; display: flex; gap: 7px; align-items: center; }
+      .mini-task::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--azul); flex: none; }
+      .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+      .bar-row small { flex: 0 0 70px; font-size: 0.62rem; color: var(--suave); text-align: right; }
+      .bar-track { flex: 1; height: 11px; background: var(--fondo); border-radius: 999px; overflow: hidden; }
+      .bar-fill { height: 100%; border-radius: 999px; }
+      .mini-card.ancho { grid-column: 1 / -1; }
 
-      .suggestions h2 {
-        font-size: 3rem;
-        font-weight: 800;
-        margin-bottom: 20px;
+      /* ====== Secciones genéricas ====== */
+      section.bloque { padding: 70px 0; }
+      .sec-head { text-align: center; max-width: 640px; margin: 0 auto 44px; }
+      .sec-tag { font-size: 0.8rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--azul); }
+      .sec-head h2 { font-size: clamp(1.8rem, 3.4vw, 2.5rem); font-weight: 900; letter-spacing: -1px; margin: 10px 0 12px; }
+      .sec-head p { color: var(--suave); font-size: 1.05rem; }
+
+      /* ====== Calendario real ====== */
+      .cal-wrap { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: start; }
+      .panel { background: var(--blanco); border: 1px solid var(--borde); border-radius: var(--radio); box-shadow: var(--sombra); padding: 20px; }
+      .cal-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+      .cal-top h3 { font-size: 1.1rem; font-weight: 800; }
+      .cal-btn { width: 36px; height: 36px; border: 1px solid var(--borde); background: #fff; border-radius: 10px; color: var(--azul); font-size: 1.3rem; line-height: 1; }
+      .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+      .cal-dn { text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--suave); padding: 4px 0; }
+      .cal-cell { aspect-ratio: 1/1; border: 1px solid var(--borde); border-radius: 10px; display: flex; flex-direction: column; align-items: center; padding: 5px 0; gap: 3px; font-size: 0.82rem; font-weight: 600; position: relative; }
+      .cal-cell.vacia { border: none; }
+      .cal-cell.hoy { border-color: var(--azul); border-width: 2px; }
+      .cal-cell.sel { background: var(--azul-claro); border-color: var(--azul); }
+      .cal-dots { display: flex; gap: 3px; }
+      .cal-dot { width: 6px; height: 6px; border-radius: 50%; }
+      .d-rojo { background: var(--rojo); } .d-verde { background: var(--verde); } .d-ambar { background: var(--ambar); }
+      .leyenda { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; font-size: 0.78rem; color: var(--suave); }
+      .leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+      .ev { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px dashed var(--borde); }
+      .ev:last-child { border-bottom: none; }
+      .ev .badge { font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; flex: none; }
+      .ev small { color: var(--texto); font-size: 0.86rem; }
+
+      /* ====== Módulos (features) ====== */
+      .mods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+      .mod { background: var(--blanco); border: 1px solid var(--borde); border-radius: var(--radio); padding: 26px; transition: transform .35s, box-shadow .35s, border-color .35s; }
+      .mod:hover { transform: translateY(-6px); box-shadow: var(--sombra-lg); border-color: rgba(29,78,216,0.25); }
+      .mod-ic { width: 48px; height: 48px; border-radius: 12px; background: var(--azul-claro); display: grid; place-items: center; font-size: 1.5rem; margin-bottom: 14px; }
+      .mod h3 { font-size: 1.15rem; font-weight: 800; margin-bottom: 6px; }
+      .mod p { color: var(--suave); font-size: 0.94rem; }
+
+      /* ====== Pipeline de fases ====== */
+      .fases { background: var(--blanco); border: 1px solid var(--borde); border-radius: 20px; box-shadow: var(--sombra); padding: 30px; }
+      .fases-row { display: flex; align-items: stretch; gap: 0; overflow-x: auto; }
+      .fase { flex: 1; min-width: 130px; text-align: center; position: relative; padding: 0 8px; }
+      .fase .pt { width: 18px; height: 18px; border-radius: 50%; margin: 0 auto 14px; position: relative; z-index: 1; box-shadow: 0 0 0 4px #fff; }
+      .fase::before { content: ''; position: absolute; top: 9px; left: -50%; width: 100%; height: 2px; background: var(--borde); z-index: 0; }
+      .fase:first-child::before { display: none; }
+      .fase b { display: block; font-size: 0.9rem; font-weight: 700; }
+      .fase small { color: var(--suave); font-size: 0.78rem; }
+
+      /* ====== Multi-dispositivo ====== */
+      .multi { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+      .multi ul { list-style: none; margin-top: 18px; }
+      .multi li { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; font-size: 0.98rem; }
+      .multi li .tk { color: var(--verde); font-weight: 900; flex: none; }
+      .devices { display: flex; align-items: flex-end; justify-content: center; gap: -10px; position: relative; }
+      .laptop { width: 100%; max-width: 380px; background: var(--blanco); border: 1px solid var(--borde); border-radius: 14px; box-shadow: var(--sombra-lg); padding: 10px; }
+      .laptop .scr { background: var(--fondo); border-radius: 8px; height: 200px; display: grid; grid-template-columns: 50px 1fr; gap: 6px; padding: 8px; }
+      .laptop .scr .sb { background: #fff; border: 1px solid var(--borde); border-radius: 6px; }
+      .laptop .scr .ct { display: grid; grid-template-rows: auto 1fr; gap: 6px; }
+      .laptop .scr .ct .b { background: #fff; border: 1px solid var(--borde); border-radius: 6px; }
+      .phone { position: absolute; right: 0; bottom: -12px; width: 110px; background: #fff; border: 1px solid var(--borde); border-radius: 18px; box-shadow: var(--sombra-lg); padding: 8px 6px; }
+      .phone .pscr { background: var(--fondo); border-radius: 12px; height: 180px; display: grid; grid-template-rows: 1fr 28px; gap: 5px; padding: 6px; }
+      .phone .pscr .pc { background: #fff; border: 1px solid var(--borde); border-radius: 6px; }
+      .phone .pscr .pn { background: #fff; border: 1px solid var(--borde); border-radius: 8px; display: flex; align-items: center; justify-content: space-around; }
+      .phone .pscr .pn i { width: 7px; height: 7px; border-radius: 50%; background: var(--borde); }
+      .phone .pscr .pn i.on { background: var(--azul); }
+
+      /* ====== CTA final ====== */
+      .cta { text-align: center; background: linear-gradient(135deg, var(--azul), #0e7490); color: #fff; border-radius: 28px; padding: 64px 32px; box-shadow: var(--sombra-lg); }
+      .cta h2 { font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 900; letter-spacing: -1px; margin-bottom: 12px; }
+      .cta p { opacity: 0.9; max-width: 460px; margin: 0 auto 28px; }
+      .cta .btn-blanco { background: #fff; color: var(--azul); }
+      .cta .btn-blanco:hover { transform: translateY(-3px); box-shadow: 0 24px 40px -14px rgba(0,0,0,0.35); }
+      .cta .btn-ghost { background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.4); }
+      .cta .btn-ghost:hover { background: rgba(255,255,255,0.2); transform: translateY(-3px); }
+
+      footer { text-align: center; padding: 48px 0; color: var(--suave); font-size: 0.88rem; }
+      footer a { color: var(--azul); font-weight: 600; }
+
+      /* Reveal */
+      .reveal { opacity: 0; transform: translateY(28px); transition: all .8s cubic-bezier(.2,0,0,1); }
+      .reveal.on { opacity: 1; transform: none; }
+
+      @media (max-width: 900px) {
+        .hero-grid, .cal-wrap, .multi { grid-template-columns: 1fr; }
+        .hero { padding: 48px 0 20px; }
+        .ventana { transform: none; margin-top: 8px; }
+        .ventana:hover { transform: translateY(-4px); }
+        .mods { grid-template-columns: 1fr 1fr; }
+        .multi { gap: 60px; }
       }
-
-      /* Animations */
-      .reveal {
-        opacity: 0;
-        transform: translateY(40px);
-        transition: all 1s cubic-bezier(0.2, 0, 0, 1);
-      }
-
-      .reveal.active {
-        opacity: 1;
-        transform: translateY(0);
-      }
-
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-
-      footer {
-        padding: 60px 0;
-        text-align: center;
-        border-top: 1px solid var(--border);
-        color: rgba(255, 255, 255, 0.2);
-        font-size: 0.9rem;
-      }
-
-      @media (max-width: 768px) {
-        h1 { font-size: 3.5rem; }
-        .grid { gap: 16px; }
-        .card { padding: 32px; }
-        .header-container.sticky nav { justify-content: center; }
+      @media (max-width: 560px) {
+        .mods { grid-template-columns: 1fr; }
+        .mini-cards { grid-template-columns: 1fr; }
+        .botones .btn { flex: 1; justify-content: center; }
       }
     </style>
   </head>
   <body>
-    <!-- Background Blobs -->
-    <div class="blob-container">
-      <div class="blob blob-1"></div>
-      <div class="blob blob-2"></div>
-    </div>
-
-    <div class="container">
-      <div class="header-container" id="header">
+    <header id="top">
+      <div class="container">
         <nav>
-          <div class="logo">ZONA CLIENTE</div>
+          <div class="marca">
+            <img src="/logo.png" alt="Zona Cliente" onerror="this.style.display='none'" />
+            Zona <b>Cliente</b>
+          </div>
+          <a href="#descargar" class="nav-cta">⬇ Descargar app</a>
         </nav>
       </div>
+    </header>
 
-      <section class="hero">
-        <h1 class="reveal">Tu CRM, en cualquier sitio.</h1>
-        <p class="reveal">Gestiona hospitales, contactos, empresas y encargos desde el ordenador o el móvil. El mismo software, siempre sincronizado.</p>
-        <div class="reveal buttons-container">
-          <a href="/" class="download-btn">Usar en el Navegador</a>
-          <a href="https://github.com/roblesgg/ZonaCliente/releases/latest/download/zona-cliente-latest.apk" class="download-btn" download>Descargar APK</a>
-          <p style="margin-top: 15px; font-size: 0.9rem; color: rgba(255,255,255,0.4);">
-            Última versión disponible | Los usuarios de iPhone pueden usar la versión web.
+    <!-- ===== HERO ===== -->
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="reveal">
+          <span class="pill"><span class="dot"></span> Sincronizado en la nube · Web + Android</span>
+          <h1>Tu cartera de clientes, <span class="grad">siempre a mano</span>.</h1>
+          <p class="lead">
+            Hospitales, empresas, contactos y encargos en un solo sitio. Controla cada
+            oportunidad por fases, no pierdas una fecha y mira tu beneficio potencial de un vistazo.
           </p>
+          <div class="botones">
+            <a href="https://github.com/roblesgg/ZonaCliente/releases/latest/download/zona-cliente-latest.apk" class="btn btn-primario" download>⬇ Descargar APK</a>
+            <a href="/" class="btn btn-sec">🌐 Abrir en el navegador</a>
+          </div>
+          <p class="nota">Android <b>6.0+</b> · ¿iPhone? Usa la versión web, idéntica.</p>
         </div>
-      </section>
 
-      <section class="features">
-        <div class="grid">
-          <div class="card reveal">
-            <span class="card-icon">🏥</span>
-            <h3>Hospitales y empresas</h3>
-            <p>Toda la cartera de clientes organizada y a un clic, con su ficha y su historial.</p>
-          </div>
-          <div class="card reveal">
-            <span class="card-icon">📇</span>
-            <h3>Contactos al día</h3>
-            <p>Llama, escribe o envía un email a cada contacto directamente desde su ficha.</p>
-          </div>
-          <div class="card reveal">
-            <span class="card-icon">📦</span>
-            <h3>Encargos bajo control</h3>
-            <p>Registra encargos, sigue su estado y no pierdas de vista ninguna entrega.</p>
-          </div>
-          <div class="card reveal">
-            <span class="card-icon">🔄</span>
-            <h3>Siempre sincronizado</h3>
-            <p>Lo que cambias en el móvil aparece en el ordenador al instante, gracias a la nube.</p>
+        <!-- Mockup: panel de control real -->
+        <div class="reveal">
+          <div class="ventana">
+            <div class="ventana-barra">
+              <i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>
+              <span class="url">zonacliente.dripdev.dev</span>
+            </div>
+            <div class="ventana-cuerpo">
+              <div class="mini-side">
+                <span class="on">🏠</span><span>🏥</span><span>🏢</span><span>📋</span><span>📅</span><span>🔍</span>
+              </div>
+              <div class="mini-main">
+                <div class="mini-h">Buenos días 👋</div>
+                <div class="mini-cards">
+                  <div class="mini-card">
+                    <h4>📌 Tareas de hoy</h4>
+                    <div class="mini-task">Llamar a Hospital La Paz</div>
+                    <div class="mini-task">Enviar oferta — Monitor X3</div>
+                  </div>
+                  <div class="mini-card">
+                    <h4>🔔 Avisos</h4>
+                    <span class="chip rojo">Bombas de infusión — vence hoy</span>
+                    <span class="chip ambar">Ecógrafo — vence en 2 días</span>
+                  </div>
+                  <div class="mini-card ancho">
+                    <h4>📊 Encargos por fase</h4>
+                    <div class="bar-row"><small>Detección</small><div class="bar-track"><div class="bar-fill" style="width:80%;background:#4338ca"></div></div></div>
+                    <div class="bar-row"><small>Ofertas</small><div class="bar-track"><div class="bar-fill" style="width:55%;background:#b45309"></div></div></div>
+                    <div class="bar-row"><small>Comparativa</small><div class="bar-track"><div class="bar-fill" style="width:35%;background:#0e7490"></div></div></div>
+                    <div class="bar-row"><small>Compra</small><div class="bar-track"><div class="bar-fill" style="width:25%;background:#15803d"></div></div></div>
+                  </div>
+                  <div class="mini-card ancho" style="display:flex;justify-content:space-between;align-items:center">
+                    <div><h4 style="margin:0">💶 Beneficio potencial</h4></div>
+                    <strong style="font-size:1.3rem;color:var(--azul)">18.400 €</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="suggestions reveal">
-        <div class="glass-panel">
-          <h2>¿Algo no va bien?</h2>
-          <p>Ayúdanos a mejorar. Envía un error o una sugerencia en segundos.</p>
-          <a href="mailto:hola@dripdev.dev" style="color: var(--secondary); font-weight: 700; text-decoration: none; font-size: 1.2rem; display: block; margin-top: 20px;">Sugerencias y Errores →</a>
+    <!-- ===== CALENDARIO ===== -->
+    <section class="bloque">
+      <div class="container">
+        <div class="sec-head reveal">
+          <span class="sec-tag">Calendario</span>
+          <h2>Tu mes, sin sorpresas</h2>
+          <p>Las fechas límite, las entregas y tus recordatorios se colocan solos en el calendario. Toca un día y ve qué toca.</p>
         </div>
-      </section>
 
-      <footer>
-        <p>&copy; 2026 Drip Dev. Hecho para que tu equipo trabaje mejor.</p>
-      </footer>
-    </div>
+        <div class="cal-wrap">
+          <div class="panel reveal">
+            <div class="cal-top">
+              <button class="cal-btn" aria-label="Mes anterior">‹</button>
+              <h3>Junio 2026</h3>
+              <button class="cal-btn" aria-label="Mes siguiente">›</button>
+            </div>
+            <div class="cal-grid">
+              <div class="cal-dn">Lun</div><div class="cal-dn">Mar</div><div class="cal-dn">Mié</div>
+              <div class="cal-dn">Jue</div><div class="cal-dn">Vie</div><div class="cal-dn">Sáb</div><div class="cal-dn">Dom</div>
+            </div>
+            <div class="cal-grid" id="cal"></div>
+            <div class="leyenda">
+              <span><i class="cal-dot d-rojo"></i> Fecha límite</span>
+              <span><i class="cal-dot d-verde"></i> Entrega</span>
+              <span><i class="cal-dot d-ambar"></i> Recordatorio</span>
+            </div>
+          </div>
+
+          <div class="panel reveal">
+            <h3 style="font-size:1.05rem;font-weight:800;margin-bottom:10px">Eventos del día · 23 jun</h3>
+            <div class="ev">
+              <span class="badge" style="background:#fee2e2;color:var(--rojo)">Fecha límite</span>
+              <small>Bombas de infusión — fecha límite</small>
+            </div>
+            <div class="ev">
+              <span class="badge" style="background:#dcfce7;color:var(--verde)">Entrega</span>
+              <small>Monitores de signos vitales — entrega</small>
+            </div>
+            <div class="ev">
+              <span class="badge" style="background:#fef3c7;color:var(--ambar)">Recordatorio</span>
+              <small>Llamar al jefe de compras (Ecógrafo)</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== MÓDULOS ===== -->
+    <section class="bloque">
+      <div class="container">
+        <div class="sec-head reveal">
+          <span class="sec-tag">Todo en uno</span>
+          <h2>Cada parte de tu trabajo, organizada</h2>
+          <p>Seis pantallas pensadas para el día a día comercial. Las mismas en el ordenador y en el móvil.</p>
+        </div>
+        <div class="mods">
+          <div class="mod reveal"><div class="mod-ic">🏥</div><h3>Hospitales</h3><p>Toda tu cartera de centros con su ficha, contactos y encargos asociados.</p></div>
+          <div class="mod reveal"><div class="mod-ic">🏢</div><h3>Empresas</h3><p>Proveedores y distribuidores organizados y enlazados a cada oportunidad.</p></div>
+          <div class="mod reveal"><div class="mod-ic">📋</div><h3>Encargos</h3><p>Sigue cada operación por fases, con fechas, producto y comisión esperada.</p></div>
+          <div class="mod reveal"><div class="mod-ic">📅</div><h3>Calendario</h3><p>Límites, entregas y recordatorios reunidos automáticamente mes a mes.</p></div>
+          <div class="mod reveal"><div class="mod-ic">📇</div><h3>Contactos</h3><p>Llama, escribe o envía un email directamente desde la ficha de cada persona.</p></div>
+          <div class="mod reveal"><div class="mod-ic">🔍</div><h3>Buscar</h3><p>Encuentra cualquier hospital, empresa o encargo al instante desde un único buscador.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PIPELINE DE FASES ===== -->
+    <section class="bloque">
+      <div class="container">
+        <div class="sec-head reveal">
+          <span class="sec-tag">Embudo de ventas</span>
+          <h2>Sigue cada oportunidad, fase a fase</h2>
+          <p>Sabes en todo momento por dónde va cada encargo y cuánto beneficio tienes en juego.</p>
+        </div>
+        <div class="fases reveal">
+          <div class="fases-row">
+            <div class="fase"><span class="pt" style="background:#4338ca"></span><b>Detección</b><small>de necesidad</small></div>
+            <div class="fase"><span class="pt" style="background:#b45309"></span><b>Ofertas</b><small>petición</small></div>
+            <div class="fase"><span class="pt" style="background:#0e7490"></span><b>Comparativa</b><small>y propuesta</small></div>
+            <div class="fase"><span class="pt" style="background:#a21caf"></span><b>Demostración</b><small>prueba</small></div>
+            <div class="fase"><span class="pt" style="background:#15803d"></span><b>Compra</b><small>propuesta final</small></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== MULTIDISPOSITIVO ===== -->
+    <section class="bloque">
+      <div class="container multi">
+        <div class="reveal">
+          <span class="sec-tag">Un solo software</span>
+          <h2 style="font-size:clamp(1.8rem,3.4vw,2.4rem);font-weight:900;letter-spacing:-1px;margin:10px 0 4px">
+            En el ordenador y en el bolsillo
+          </h2>
+          <ul>
+            <li><span class="tk">✓</span> Mismo CRM en horizontal (escritorio) y vertical (móvil).</li>
+            <li><span class="tk">✓</span> Lo que cambias en el móvil aparece al instante en el ordenador.</li>
+            <li><span class="tk">✓</span> Instálalo como app Android o úsalo desde cualquier navegador.</li>
+            <li><span class="tk">✓</span> Tus datos seguros y sincronizados en la nube con Supabase.</li>
+          </ul>
+        </div>
+        <div class="reveal devices">
+          <div class="laptop">
+            <div class="scr">
+              <div class="sb"></div>
+              <div class="ct"><div class="b" style="flex:0 0 24px;height:24px"></div><div class="b"></div></div>
+            </div>
+          </div>
+          <div class="phone">
+            <div class="pscr">
+              <div class="pc"></div>
+              <div class="pn"><i class="on"></i><i></i><i></i><i></i></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CTA ===== -->
+    <section class="bloque" id="descargar">
+      <div class="container">
+        <div class="cta reveal">
+          <h2>Empieza a usar Zona Cliente hoy</h2>
+          <p>Descarga la app en tu móvil o ábrela en el navegador. Sin instalaciones complicadas.</p>
+          <div class="botones" style="justify-content:center">
+            <a href="https://github.com/roblesgg/ZonaCliente/releases/latest/download/zona-cliente-latest.apk" class="btn btn-blanco" download>⬇ Descargar APK</a>
+            <a href="/" class="btn btn-ghost">🌐 Abrir en el navegador</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p>
+        ¿Una idea o un fallo? <a href="mailto:hola@dripdev.dev">Escríbenos →</a><br />
+        &copy; 2026 Drip Dev · Zona Cliente
+      </p>
+    </footer>
 
     <script>
-      // Sticky Header Logic
-      const header = document.getElementById('header');
-      window.onscroll = () => {
-        if (window.scrollY > 50) {
-          header.classList.add('sticky');
-        } else {
-          header.classList.remove('sticky');
-        }
+      // Navbar sombra al hacer scroll
+      const head = document.getElementById('top');
+      addEventListener('scroll', () => head.classList.toggle('scrolled', scrollY > 8));
+
+      // Calendario de junio 2026 (mié=23 = hoy/seleccionado) con eventos de ejemplo
+      const cal = document.getElementById('cal');
+      const eventos = {
+        4: ['ambar'], 9: ['verde'], 12: ['rojo', 'ambar'], 16: ['verde'],
+        18: ['ambar'], 23: ['rojo', 'verde', 'ambar'], 26: ['rojo'], 30: ['verde'],
       };
+      const offset = 0; // 1 jun 2026 = lunes
+      for (let i = 0; i < offset; i++) cal.insertAdjacentHTML('beforeend', '<div class="cal-cell vacia"></div>');
+      for (let d = 1; d <= 30; d++) {
+        const evs = eventos[d] || [];
+        const cls = ['cal-cell'];
+        if (d === 23) cls.push('hoy', 'sel');
+        const dots = evs.map((c) => `<span class="cal-dot d-${c}"></span>`).join('');
+        cal.insertAdjacentHTML('beforeend',
+          `<div class="${cls.join(' ')}">${d}<span class="cal-dots">${dots}</span></div>`);
+      }
 
-      // Scroll Reveal Logic
-      const observerOptions = {
-        threshold: 0.1
-      };
-
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('active');
-          }
-        });
-      }, observerOptions);
-
-      document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+      // Reveal on scroll
+      const io = new IntersectionObserver((es) => {
+        es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); } });
+      }, { threshold: 0.12 });
+      document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
     </script>
   </body>
 </html>
