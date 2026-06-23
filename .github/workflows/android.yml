@@ -42,26 +42,38 @@ jobs:
       - name: Sincronizar Capacitor
         run: npx cap sync android
 
-      - name: Compilar APK de depuración
+      - name: Restaurar el keystore de firma (desde secret)
         run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - name: Subir la APK como artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: zona-cliente-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/zonacliente-release.keystore"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/zonacliente-release.keystore" >> $GITHUB_ENV
 
       - name: Leer versión de la app
         run: |
           VERSION=$(node -e "console.log(require('./package.json').version)")
           echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+          # El versionCode usa el número de ejecución del workflow (siempre creciente)
+          # para que cada build se reconozca como una actualización. Ver paso de compilación.
+
+      - name: Compilar APK de release (firmada con clave estable)
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease \
+            -PZC_KEYSTORE_PATH="$ANDROID_KEYSTORE_PATH" \
+            -PZC_KEYSTORE_PASSWORD="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -PZC_KEY_ALIAS="${{ secrets.ANDROID_KEY_ALIAS }}" \
+            -PZC_VERSION_CODE="${{ github.run_number }}" \
+            -PZC_VERSION_NAME="$APP_VERSION"
+
+      - name: Subir la APK como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zona-cliente-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
 
       - name: Renombrar la APK
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk zona-cliente-latest.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk zona-cliente-latest.apk
 
       - name: Publicar Release en GitHub
         run: |

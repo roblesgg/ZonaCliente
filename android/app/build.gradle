@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+// Lee un valor de config: primero propiedad de Gradle (-P), luego variable de
+// entorno, y si no, el valor por defecto. Fiable con el daemon de Gradle.
+def zcConfig = { String prop, String env, String def_ ->
+    return project.findProperty(prop) ?: System.getenv(env) ?: def_
+}
+
 android {
     namespace "com.roblesgg.zonacliente"
     compileSdk rootProject.ext.compileSdkVersion
@@ -7,8 +13,10 @@ android {
         applicationId "com.roblesgg.zonacliente"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // versionCode/Name se pueden sobrescribir desde el CI para que cada build
+        // sea una actualización. En local caen a los valores por defecto.
+        versionCode zcConfig("ZC_VERSION_CODE", "ANDROID_VERSION_CODE", "1").toString().toInteger()
+        versionName zcConfig("ZC_VERSION_NAME", "ANDROID_VERSION_NAME", "1.0").toString()
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,10 +24,29 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Firma de release: la clave llega desde el CI (decodificada desde un secret).
+    // Si no está presente (build local sin configurar), Gradle usará la debug.
+    def zcKeystorePath = zcConfig("ZC_KEYSTORE_PATH", "ANDROID_KEYSTORE_PATH", "")
+    def zcHasKeystore = zcKeystorePath && new File(zcKeystorePath.toString()).exists()
+    signingConfigs {
+        release {
+            if (zcHasKeystore) {
+                def zcPass = zcConfig("ZC_KEYSTORE_PASSWORD", "ANDROID_KEYSTORE_PASSWORD", "").toString()
+                storeFile file(zcKeystorePath.toString())
+                storePassword zcPass
+                keyAlias zcConfig("ZC_KEY_ALIAS", "ANDROID_KEY_ALIAS", "zonacliente").toString()
+                keyPassword zcPass
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Solo aplica la firma propia si el keystore está disponible.
+            if (zcHasKeystore) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
