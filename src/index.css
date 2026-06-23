@@ -35,8 +35,12 @@ html,
 body {
   margin: 0;
   padding: 0;
+  width: 100%;
   background: var(--fondo);
   -webkit-text-size-adjust: 100%;
+  /* Nada debe desbordar a lo ancho (evita el "zoom-out" raro en móvil). */
+  overflow-x: hidden;
+  overflow-wrap: break-word;
 }
 
 h1,
