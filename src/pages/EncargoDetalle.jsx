@@ -3,7 +3,7 @@
 // involucradas (varias), ofertas de proveedores, campos personalizados y notas
 // de seguimiento con recordatorios.
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabaseConfigurado } from '../lib/supabase.js'
 import {
@@ -13,7 +13,6 @@ import {
   listarProductos, crearProducto,
   listarProductosDeOportunidad, añadirProductoAOportunidad, actualizarLineaProducto, quitarProductoDeOportunidad,
   listarPersonas, listarPersonasDeOportunidad, añadirPersonaAOportunidad, quitarPersonaDeOportunidad,
-  obtenerAjustes,
 } from '../lib/datos.js'
 import { FASES, faseInfo } from '../lib/fases.js'
 import { TIPOS_PERSONA } from '../lib/constantes.js'
@@ -33,12 +32,11 @@ export default function EncargoDetalle() {
   const [ofertas, setOfertas] = useState([])
   const [notas, setNotas] = useState([])
   const [empresas, setEmpresas] = useState([])
-  const [pct, setPct] = useState(0)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
 
   // Edición de datos principales
-  const [datos, setDatos] = useState({ producto: '', empresa_id: '', descripcion: '', fase: 'deteccion', ingresos_totales: '', comision_esperada: '', extra: {} })
+  const [datos, setDatos] = useState({ producto: '', empresa_id: '', descripcion: '', fase: 'deteccion', ingresos_totales: '', comision_porcentaje: '', comision_esperada: '', extra: {} })
   const [guardando, setGuardando] = useState(false)
   const [guardado, setGuardado] = useState(false)
 
@@ -52,18 +50,18 @@ export default function EncargoDetalle() {
   async function cargar() {
     setCargando(true); setError(null)
     try {
-      const [enc, lin, inv, ofs, nts, emps, cat, pers, aj] = await Promise.all([
+      const [enc, lin, inv, ofs, nts, emps, cat, pers] = await Promise.all([
         obtenerEncargo(id), listarProductosDeOportunidad(id), listarPersonasDeOportunidad(id),
         listarOfertasDeEncargo(id), listarNotasDeEncargo(id), listarEmpresas(),
-        listarProductos(), listarPersonas(), obtenerAjustes(),
+        listarProductos(), listarPersonas(),
       ])
       setEncargo(enc); setLineas(lin); setInvolucrados(inv)
       setOfertas(ofs); setNotas(nts); setEmpresas(emps); setCatalogo(cat); setPersonas(pers)
-      setPct(Number(aj.comision_porcentaje) || 0)
       setDatos({
         producto: enc.producto || '', empresa_id: enc.empresa_id || '',
         descripcion: enc.descripcion || '', fase: enc.fase || 'deteccion',
-        ingresos_totales: enc.ingresos_totales ?? '', comision_esperada: enc.comision_esperada ?? '',
+        ingresos_totales: enc.ingresos_totales ?? '',
+        comision_porcentaje: enc.comision_porcentaje ?? '', comision_esperada: enc.comision_esperada ?? '',
         extra: enc.extra || {},
       })
     } catch (e) {
@@ -78,11 +76,20 @@ export default function EncargoDetalle() {
     else setCargando(false)
   }, [id])
 
-  // Comisión sugerida a partir de los ingresos y el % de Ajustes.
-  const comisionSugerida = useMemo(() => {
-    const ing = Number(datos.ingresos_totales) || 0
-    return Math.round(ing * pct) / 100
-  }, [datos.ingresos_totales, pct])
+  // La comisión (€) se recalcula sola: ingresos × % / 100. Al cambiar los
+  // ingresos o el %, se actualiza el campo de comisión (editable a mano).
+  function comisionDe(ingresos, porcentaje) {
+    if (ingresos === '' || porcentaje === '') return ''
+    const ing = Number(ingresos), pc = Number(porcentaje)
+    if (isNaN(ing) || isNaN(pc)) return ''
+    return String(Math.round(ing * pc) / 100)
+  }
+  function setIngresos(v) {
+    setDatos((d) => ({ ...d, ingresos_totales: v, comision_esperada: comisionDe(v, d.comision_porcentaje) || d.comision_esperada }))
+  }
+  function setPorcentaje(v) {
+    setDatos((d) => ({ ...d, comision_porcentaje: v, comision_esperada: comisionDe(d.ingresos_totales, v) || d.comision_esperada }))
+  }
 
   async function guardarDatos(e) {
     e?.preventDefault()
@@ -94,6 +101,7 @@ export default function EncargoDetalle() {
         descripcion: datos.descripcion || null,
         fase: datos.fase,
         ingresos_totales: datos.ingresos_totales === '' ? null : Number(datos.ingresos_totales),
+        comision_porcentaje: datos.comision_porcentaje === '' ? null : Number(datos.comision_porcentaje),
         comision_esperada: datos.comision_esperada === '' ? null : Number(datos.comision_esperada),
         extra: datos.extra || {},
       })
@@ -218,20 +226,17 @@ export default function EncargoDetalle() {
           <div>
             <label className="placeholder" style={{ fontSize: '0.8rem' }}>Ingresos totales (€)</label>
             <input className="campo" type="number" step="0.01" placeholder="0" value={datos.ingresos_totales}
-              onChange={(e) => setDatos({ ...datos, ingresos_totales: e.target.value })} />
+              onChange={(e) => setIngresos(e.target.value)} />
           </div>
           <div>
-            <label className="placeholder" style={{ fontSize: '0.8rem' }}>
-              Comisión esperada (€) {pct > 0 && <>· sugerida: <strong>{eur(comisionSugerida)} €</strong> ({pct}%)</>}
-            </label>
-            <div style={{ display: 'flex', gap: '0.4rem' }}>
-              <input className="campo" type="number" step="0.01" placeholder="0" value={datos.comision_esperada}
-                onChange={(e) => setDatos({ ...datos, comision_esperada: e.target.value })} />
-              {pct > 0 && (
-                <button type="button" className="btn-sec-claro" title="Aplicar la comisión sugerida"
-                  onClick={() => setDatos({ ...datos, comision_esperada: comisionSugerida })}>↻</button>
-              )}
-            </div>
+            <label className="placeholder" style={{ fontSize: '0.8rem' }}>Comisión (%)</label>
+            <input className="campo" type="number" step="0.1" min="0" max="100" placeholder="Ej. 10"
+              value={datos.comision_porcentaje} onChange={(e) => setPorcentaje(e.target.value)} />
+          </div>
+          <div>
+            <label className="placeholder" style={{ fontSize: '0.8rem' }}>Comisión esperada (€) · se calcula sola</label>
+            <input className="campo" type="number" step="0.01" placeholder="0" value={datos.comision_esperada}
+              onChange={(e) => setDatos({ ...datos, comision_esperada: e.target.value })} />
           </div>
         </div>
 

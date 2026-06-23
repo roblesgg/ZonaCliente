@@ -1,5 +1,6 @@
-// Ajustes globales de la app: el porcentaje de comisión (que se usa para
-// calcular sola la comisión esperada de cada oportunidad) y el nombre.
+// Ajustes globales de la app: nombre y acceso al catálogo de productos.
+// (La comisión ya no es global: se define el % en cada oportunidad y la
+// comisión esperada se recalcula sola.)
 
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -8,7 +9,7 @@ import { obtenerAjustes, actualizarAjustes } from '../lib/datos.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
 export default function Ajustes() {
-  const [form, setForm] = useState({ nombre: '', comision_porcentaje: '' })
+  const [form, setForm] = useState({ nombre: '' })
   const [cargando, setCargando] = useState(true)
   const [guardando, setGuardando] = useState(false)
   const [guardado, setGuardado] = useState(false)
@@ -19,10 +20,7 @@ export default function Ajustes() {
     ;(async () => {
       try {
         const a = await obtenerAjustes()
-        setForm({
-          nombre: a.nombre || '',
-          comision_porcentaje: a.comision_porcentaje ?? '',
-        })
+        setForm({ nombre: a.nombre || '' })
       } catch (e) {
         setError(e.message)
       } finally {
@@ -37,10 +35,7 @@ export default function Ajustes() {
     setError(null)
     setGuardado(false)
     try {
-      await actualizarAjustes({
-        nombre: form.nombre || null,
-        comision_porcentaje: form.comision_porcentaje === '' ? 0 : Number(form.comision_porcentaje),
-      })
+      await actualizarAjustes({ nombre: form.nombre || null })
       setGuardado(true)
     } catch (e) {
       setError(e.message)
@@ -57,20 +52,7 @@ export default function Ajustes() {
       <h1 className="titulo-pagina">⚙️ Ajustes</h1>
 
       <form className="tarjeta" onSubmit={guardar} style={{ maxWidth: 520 }}>
-        <h3>Comisión</h3>
-        <p className="placeholder" style={{ marginTop: 0 }}>
-          Porcentaje que se aplica sobre los <strong>ingresos totales</strong> de cada
-          oportunidad para calcular la <strong>comisión esperada</strong> automáticamente.
-          (Podrás ajustarla a mano en cada oportunidad si hace falta.)
-        </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: 220 }}>
-          <input className="campo" type="number" step="0.1" min="0" max="100"
-            placeholder="Ej. 10" value={form.comision_porcentaje}
-            onChange={(e) => setForm({ ...form, comision_porcentaje: e.target.value })} />
-          <span style={{ fontWeight: 700, fontSize: '1.2rem' }}>%</span>
-        </div>
-
-        <h3 style={{ marginTop: '1.25rem' }}>Nombre</h3>
+        <h3>Nombre</h3>
         <input className="campo" placeholder="Tu nombre (opcional)" value={form.nombre}
           onChange={(e) => setForm({ ...form, nombre: e.target.value })} style={{ maxWidth: 320 }} />
 

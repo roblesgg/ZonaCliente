@@ -88,11 +88,12 @@ create table encargos (
   id                uuid primary key default gen_random_uuid(),
   producto          text,            -- título de la oportunidad
   empresa_id        uuid references empresas(id) on delete set null,
-  fase              text not null default 'deteccion',
-  descripcion       text,
-  ingresos_totales  numeric(12,2),
-  comision_esperada numeric(12,2),
-  fecha_limite      date,
+  fase                text not null default 'deteccion',
+  descripcion         text,
+  ingresos_totales    numeric(12,2),
+  comision_porcentaje numeric(5,2),   -- % propio de esta oportunidad
+  comision_esperada   numeric(12,2),  -- se recalcula solo a partir del % y los ingresos
+  fecha_limite        date,
   extra             jsonb not null default '{}'::jsonb,
   creado_en         timestamptz not null default now()
 );
@@ -147,7 +148,6 @@ create table notas (
 -- -------------------------------------------------------------
 create table ajustes (
   id                   int primary key default 1,
-  comision_porcentaje  numeric(5,2) not null default 0,
   nombre               text,
   extra                jsonb not null default '{}'::jsonb,
   constraint ajustes_una_fila check (id = 1)

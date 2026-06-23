@@ -271,7 +271,7 @@ export async function listarRecordatorios() {
 export async function obtenerAjustes() {
   const { data, error } = await supabase.from('ajustes').select('*').eq('id', 1).maybeSingle()
   if (error) throw error
-  return data || { id: 1, comision_porcentaje: 0, nombre: '', extra: {} }
+  return data || { id: 1, nombre: '', extra: {} }
 }
 
 export async function actualizarAjustes(cambios) {

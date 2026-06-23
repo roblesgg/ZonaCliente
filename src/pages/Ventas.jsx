@@ -6,14 +6,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabaseConfigurado } from '../lib/supabase.js'
 import {
-  listarEncargos, crearEncargo, actualizarEncargo, borrarEncargo, listarEmpresas, obtenerAjustes,
+  listarEncargos, crearEncargo, actualizarEncargo, borrarEncargo, listarEmpresas,
 } from '../lib/datos.js'
 import { FASES, indiceFase } from '../lib/fases.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 import SelectorEmpresa from '../components/SelectorEmpresa.jsx'
 
 const FORM_VACIO = {
-  producto: '', empresa_id: '', fase: 'deteccion', fecha_limite: '', ingresos_totales: '',
+  producto: '', empresa_id: '', fase: 'deteccion', fecha_limite: '', ingresos_totales: '', comision_porcentaje: '',
 }
 
 const eur = (n) => Number(n || 0).toLocaleString('es-ES')
@@ -26,16 +26,14 @@ export default function Ventas() {
   const [form, setForm] = useState(FORM_VACIO)
   const [mostrarForm, setMostrarForm] = useState(false)
   const [guardando, setGuardando] = useState(false)
-  const [pct, setPct] = useState(0)
 
   async function cargar() {
     setCargando(true)
     setError(null)
     try {
-      const [encs, emps, aj] = await Promise.all([listarEncargos(), listarEmpresas(), obtenerAjustes()])
+      const [encs, emps] = await Promise.all([listarEncargos(), listarEmpresas()])
       setEncargos(encs)
       setEmpresas(emps)
-      setPct(Number(aj.comision_porcentaje) || 0)
     } catch (e) {
       setError(e.message)
     } finally {
@@ -55,13 +53,15 @@ export default function Ventas() {
     setError(null)
     try {
       const ingresos = form.ingresos_totales ? Number(form.ingresos_totales) : null
-      const comision = ingresos != null && pct > 0 ? Math.round(ingresos * pct) / 100 : null
+      const porcentaje = form.comision_porcentaje ? Number(form.comision_porcentaje) : null
+      const comision = ingresos != null && porcentaje != null ? Math.round(ingresos * porcentaje) / 100 : null
       await crearEncargo({
         producto: form.producto,
         empresa_id: form.empresa_id || null,
         fase: form.fase,
         fecha_limite: form.fecha_limite || null,
         ingresos_totales: ingresos,
+        comision_porcentaje: porcentaje,
         comision_esperada: comision,
       })
       setForm(FORM_VACIO)
@@ -137,6 +137,9 @@ export default function Ventas() {
             <input className="campo" type="number" step="0.01" placeholder="Ingresos totales (€)"
               value={form.ingresos_totales}
               onChange={(e) => setForm({ ...form, ingresos_totales: e.target.value })} />
+            <input className="campo" type="number" step="0.1" min="0" max="100" placeholder="Comisión (%)"
+              value={form.comision_porcentaje}
+              onChange={(e) => setForm({ ...form, comision_porcentaje: e.target.value })} />
           </div>
 
           <div style={{ marginTop: '0.6rem' }}>
@@ -146,9 +149,9 @@ export default function Ventas() {
               onCreada={() => listarEmpresas().then(setEmpresas)} />
           </div>
 
-          {pct > 0 && form.ingresos_totales && (
+          {form.ingresos_totales && form.comision_porcentaje && (
             <p className="placeholder" style={{ margin: '0.5rem 0 0', fontSize: '0.85rem' }}>
-              Comisión estimada ({pct}%): <strong>{(Math.round(Number(form.ingresos_totales) * pct) / 100).toLocaleString('es-ES')} €</strong>
+              Comisión estimada ({form.comision_porcentaje}%): <strong>{(Math.round(Number(form.ingresos_totales) * Number(form.comision_porcentaje)) / 100).toLocaleString('es-ES')} €</strong>
             </p>
           )}
           <p className="placeholder" style={{ margin: '0.5rem 0 0', fontSize: '0.85rem' }}>
