@@ -311,12 +311,20 @@ a.kpis:hover .kpi {
 
 /* ====== Sub-pestañas (segmented control) ====== */
 .subtabs {
-  display: inline-flex;
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
   gap: 2px;
   padding: 3px;
   background: var(--gris-panel);
   border-radius: 999px;
   margin-bottom: 1.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.subtabs::-webkit-scrollbar {
+  display: none;
 }
 
 .subtab {
@@ -327,6 +335,9 @@ a.kpis:hover .kpi {
   font-weight: 600;
   font-size: 0.9rem;
   color: var(--texto-suave);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .subtab.activo {
@@ -528,6 +539,7 @@ a.kpis:hover .kpi {
   font-weight: 600;
   font-size: 0.95rem;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .btn-primario:hover {
@@ -539,12 +551,39 @@ a.kpis:hover .kpi {
   cursor: default;
 }
 
+/* Botón secundario (acciones suaves: añadir teléfono, crear empresa, etc.) */
+.btn-sec,
+.btn-sec-claro {
+  background: var(--azul-claro);
+  color: var(--azul);
+  border: 1px solid var(--borde);
+  padding: 0.5rem 0.85rem;
+  border-radius: var(--radio);
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn-sec:hover,
+.btn-sec-claro:hover {
+  background: #dbe7ff;
+  border-color: var(--azul);
+}
+
+.btn-sec:disabled,
+.btn-sec-claro:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .btn-icono {
   background: transparent;
   border: none;
   font-size: 1.1rem;
   padding: 0.2rem;
   border-radius: 8px;
+  cursor: pointer;
 }
 
 .btn-icono:hover {
@@ -712,6 +751,9 @@ a.kpis:hover .kpi {
 
 /* Pulsación de botones (feedback táctil). */
 .btn-primario,
+.btn-sec,
+.btn-sec-claro,
+.btn-icono,
 .subtab,
 .mover,
 .topbar-salir,
@@ -720,7 +762,9 @@ a.kpis:hover .kpi {
     transform 0.12s ease, box-shadow 0.18s ease;
 }
 
-.btn-primario:active,
+.btn-primario:active:not(:disabled),
+.btn-sec:active:not(:disabled),
+.btn-sec-claro:active:not(:disabled),
 .mover:active:not(:disabled),
 .cal-nav:active {
   transform: scale(0.96);
