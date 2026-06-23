@@ -1,6 +1,6 @@
-// Listado de encargos (entidad central) conectado a Supabase: listar, alta,
-// cambio de fase y borrado. Cada encargo se vincula a un hospital y tiene
-// fase, fechas y comisión esperada.
+// Pipeline de ventas estilo Microsoft Sales: cada fase es una columna y cada
+// encargo una tarjeta que se mueve entre fases con las flechas ‹ ›.
+// Sustituye al antiguo listado de "Encargos".
 
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -8,26 +8,17 @@ import { supabaseConfigurado } from '../lib/supabase.js'
 import {
   listarEncargos, crearEncargo, actualizarEncargo, borrarEncargo, listarHospitales,
 } from '../lib/datos.js'
+import { FASES, indiceFase } from '../lib/fases.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
-
-// Fases en orden, con su etiqueta y colores.
-const FASES = [
-  { v: 'deteccion', t: 'Detección de necesidad', c: '#e0e7ff', tx: '#4338ca' },
-  { v: 'ofertas', t: 'Petición de ofertas', c: '#fef3c7', tx: '#b45309' },
-  { v: 'comparativa', t: 'Comparativa y propuesta', c: '#cffafe', tx: '#0e7490' },
-  { v: 'demostracion', t: 'Demostración / prueba', c: '#fae8ff', tx: '#a21caf' },
-  { v: 'compra', t: 'Propuesta de compra', c: '#dcfce7', tx: '#15803d' },
-  { v: 'ganado', t: 'Ganado', c: '#bbf7d0', tx: '#166534' },
-  { v: 'perdido', t: 'Perdido', c: '#fecaca', tx: '#991b1b' },
-]
-const faseInfo = (v) => FASES.find((f) => f.v === v) || FASES[0]
 
 const FORM_VACIO = {
   producto: '', hospital_id: '', caracteristicas: '', cantidad: '',
   fase: 'deteccion', fecha_limite: '', comision_esperada: '',
 }
 
-export default function Encargos() {
+const eur = (n) => Number(n || 0).toLocaleString('es-ES')
+
+export default function Ventas() {
   const [encargos, setEncargos] = useState([])
   const [hospitales, setHospitales] = useState([])
   const [cargando, setCargando] = useState(true)
@@ -61,8 +52,7 @@ export default function Encargos() {
     setGuardando(true)
     setError(null)
     try {
-      // Convertimos campos vacíos a null y números a número.
-      const payload = {
+      await crearEncargo({
         producto: form.producto,
         hospital_id: form.hospital_id || null,
         caracteristicas: form.caracteristicas || null,
@@ -70,8 +60,7 @@ export default function Encargos() {
         fase: form.fase,
         fecha_limite: form.fecha_limite || null,
         comision_esperada: form.comision_esperada ? Number(form.comision_esperada) : null,
-      }
-      await crearEncargo(payload)
+      })
       setForm(FORM_VACIO)
       setMostrarForm(false)
       await cargar()
@@ -82,12 +71,18 @@ export default function Encargos() {
     }
   }
 
-  async function cambiarFase(id, fase) {
+  // Mueve un encargo a la fase adyacente (delta: -1 atrás, +1 adelante).
+  // Actualización optimista para que el movimiento se note al instante.
+  async function moverFase(encargo, delta) {
+    const i = indiceFase(encargo.fase)
+    const destino = FASES[i + delta]
+    if (!destino) return
+    setEncargos((prev) => prev.map((e) => (e.id === encargo.id ? { ...e, fase: destino.v } : e)))
     try {
-      await actualizarEncargo(id, { fase })
-      await cargar()
+      await actualizarEncargo(encargo.id, { fase: destino.v })
     } catch (e) {
       setError(e.message)
+      await cargar()
     }
   }
 
@@ -101,15 +96,27 @@ export default function Encargos() {
     }
   }
 
-  if (!supabaseConfigurado) return <SinConfigurar titulo="📋 Encargos" />
+  if (!supabaseConfigurado) return <SinConfigurar titulo="📊 Ventas" />
+
+  // Métricas rápidas del pipeline (solo fases en curso).
+  const abiertos = encargos.filter((e) => e.fase !== 'ganado' && e.fase !== 'perdido')
+  const potencial = abiertos.reduce((s, e) => s + (Number(e.comision_esperada) || 0), 0)
+  const ganados = encargos.filter((e) => e.fase === 'ganado').length
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 className="titulo-pagina" style={{ marginBottom: 0 }}>📋 Encargos</h1>
+      <div className="cab-pagina">
+        <h1 className="titulo-pagina">📊 Pipeline de ventas</h1>
         <button className="btn-primario" onClick={() => setMostrarForm((v) => !v)}>
-          {mostrarForm ? 'Cancelar' : '+ Nuevo'}
+          {mostrarForm ? 'Cancelar' : '+ Nuevo encargo'}
         </button>
+      </div>
+
+      {/* Resumen */}
+      <div className="kpis kpis-compacto">
+        <div className="kpi"><span className="kpi-num">{abiertos.length}</span><span className="kpi-lbl">En curso</span></div>
+        <div className="kpi"><span className="kpi-num">{eur(potencial)} €</span><span className="kpi-lbl">Beneficio potencial</span></div>
+        <div className="kpi"><span className="kpi-num">{ganados}</span><span className="kpi-lbl">Ganados</span></div>
       </div>
 
       {mostrarForm && (
@@ -130,7 +137,7 @@ export default function Encargos() {
               onChange={(e) => setForm({ ...form, cantidad: e.target.value })} />
             <select className="campo" value={form.fase}
               onChange={(e) => setForm({ ...form, fase: e.target.value })}>
-              {FASES.map((f) => <option key={f.v} value={f.v}>{f.t}</option>)}
+              {FASES.map((f) => <option key={f.v} value={f.v}>{f.tLargo}</option>)}
             </select>
             <input className="campo" type="date" value={form.fecha_limite}
               onChange={(e) => setForm({ ...form, fecha_limite: e.target.value })} />
@@ -154,43 +161,54 @@ export default function Encargos() {
         <p className="placeholder">Cargando…</p>
       ) : encargos.length === 0 ? (
         <p className="placeholder" style={{ marginTop: '1rem' }}>
-          Aún no hay encargos. Pulsa “+ Nuevo” para añadir el primero.
+          Aún no hay encargos. Pulsa “+ Nuevo encargo” para crear el primero.
         </p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
-          {encargos.map((en) => {
-            const f = faseInfo(en.fase)
+        <div className="pipeline">
+          {FASES.map((fase, fi) => {
+            const cards = encargos.filter((e) => e.fase === fase.v)
+            const suma = cards.reduce((s, e) => s + (Number(e.comision_esperada) || 0), 0)
             return (
-              <article key={en.id} className="tarjeta">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: '1rem' }}>
-                  <div>
-                    <Link to={`/encargos/${en.id}`}>
-                      <h3 style={{ marginBottom: '0.25rem', color: 'var(--azul)' }}>
-                        {en.producto}{en.cantidad ? ` (x${en.cantidad})` : ''}
-                      </h3>
-                    </Link>
-                    <p className="placeholder" style={{ margin: 0 }}>
-                      {en.hospitales?.nombre || 'Sin hospital'}
-                      {en.caracteristicas ? ` · ${en.caracteristicas}` : ''}
-                    </p>
-                    <p className="placeholder" style={{ margin: '0.25rem 0 0', fontSize: '0.8rem' }}>
-                      {en.fecha_limite ? `📅 Límite: ${en.fecha_limite}` : ''}
-                      {en.comision_esperada ? `  💶 ${Number(en.comision_esperada).toLocaleString('es-ES')} €` : ''}
-                    </p>
+              <section className="col" key={fase.v}>
+                <header className="col-cab" style={{ borderTopColor: fase.color }}>
+                  <div className="col-titulo">
+                    <span className="punto" style={{ background: fase.color }} />
+                    {fase.t}
+                    <span className="col-cuenta">{cards.length}</span>
                   </div>
-                  <button className="btn-icono" onClick={() => eliminar(en.id)} title="Borrar">🗑️</button>
+                  {suma > 0 && <div className="col-suma">{eur(suma)} €</div>}
+                </header>
+
+                <div className="col-cards">
+                  {cards.length === 0 ? (
+                    <p className="col-vacia">—</p>
+                  ) : (
+                    cards.map((en) => (
+                      <article className="card" key={en.id}>
+                        <div className="card-top">
+                          <Link to={`/encargos/${en.id}`} className="card-titulo">
+                            {en.producto}{en.cantidad ? ` ·x${en.cantidad}` : ''}
+                          </Link>
+                          <button className="btn-icono" onClick={() => eliminar(en.id)} title="Borrar">🗑️</button>
+                        </div>
+                        <p className="card-sub">{en.hospitales?.nombre || 'Sin hospital'}</p>
+                        {(en.comision_esperada || en.fecha_limite) && (
+                          <p className="card-meta">
+                            {en.comision_esperada ? <span className="card-eur">💶 {eur(en.comision_esperada)} €</span> : null}
+                            {en.fecha_limite ? <span>📅 {en.fecha_limite}</span> : null}
+                          </p>
+                        )}
+                        <div className="card-mover">
+                          <button className="mover" disabled={fi === 0}
+                            onClick={() => moverFase(en, -1)} title="Fase anterior">‹</button>
+                          <button className="mover" disabled={fi === FASES.length - 1}
+                            onClick={() => moverFase(en, 1)} title="Fase siguiente">›</button>
+                        </div>
+                      </article>
+                    ))
+                  )}
                 </div>
-                <div style={{ marginTop: '0.6rem' }}>
-                  <select
-                    className="campo"
-                    value={en.fase}
-                    onChange={(e) => cambiarFase(en.id, e.target.value)}
-                    style={{ width: 'auto', background: f.c, color: f.tx, fontWeight: 600, borderColor: f.c }}
-                  >
-                    {FASES.map((x) => <option key={x.v} value={x.v}>{x.t}</option>)}
-                  </select>
-                </div>
-              </article>
+              </section>
             )
           })}
         </div>

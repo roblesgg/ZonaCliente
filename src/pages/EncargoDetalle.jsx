@@ -8,17 +8,8 @@ import {
   obtenerEncargo, listarOfertasDeEncargo, crearOferta, borrarOferta,
   listarNotasDeEncargo, crearNota, borrarNota, listarEmpresas,
 } from '../lib/datos.js'
+import { faseInfo } from '../lib/fases.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
-
-const FASES = {
-  deteccion: { t: 'Detección de necesidad', c: '#e0e7ff', tx: '#4338ca' },
-  ofertas: { t: 'Petición de ofertas', c: '#fef3c7', tx: '#b45309' },
-  comparativa: { t: 'Comparativa y propuesta', c: '#cffafe', tx: '#0e7490' },
-  demostracion: { t: 'Demostración / prueba', c: '#fae8ff', tx: '#a21caf' },
-  compra: { t: 'Propuesta de compra', c: '#dcfce7', tx: '#15803d' },
-  ganado: { t: 'Ganado', c: '#bbf7d0', tx: '#166534' },
-  perdido: { t: 'Perdido', c: '#fecaca', tx: '#991b1b' },
-}
 
 export default function EncargoDetalle() {
   const { id } = useParams()
@@ -86,19 +77,19 @@ export default function EncargoDetalle() {
   if (cargando) return <p className="placeholder">Cargando…</p>
   if (!encargo) return <p className="placeholder">No se encontró el encargo.</p>
 
-  const f = FASES[encargo.fase] || FASES.deteccion
+  const f = faseInfo(encargo.fase)
   const precioMin = Math.min(...ofertas.filter((o) => o.precio != null).map((o) => Number(o.precio)))
 
   return (
     <>
-      <Link to="/encargos" className="badge" style={{ background: 'var(--fondo)', color: 'var(--texto-suave)' }}>
-        ‹ Volver a encargos
+      <Link to="/ventas" className="badge" style={{ background: 'var(--fondo)', color: 'var(--texto-suave)' }}>
+        ‹ Volver al pipeline
       </Link>
 
       <h1 className="titulo-pagina" style={{ marginTop: '0.75rem' }}>
         📋 {encargo.producto}{encargo.cantidad ? ` (x${encargo.cantidad})` : ''}
       </h1>
-      <span className="badge" style={{ background: f.c, color: f.tx }}>{f.t}</span>
+      <span className="badge" style={{ background: f.c, color: f.tx }}>{f.tLargo}</span>
 
       {/* Datos del encargo */}
       <div className="tarjeta" style={{ marginTop: '1rem' }}>

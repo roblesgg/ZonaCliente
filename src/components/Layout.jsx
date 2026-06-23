@@ -1,12 +1,12 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 
+// Navegación reducida a 4 secciones para que sea cómoda y visual.
+// "Buscar" deja de ser una pestaña y pasa al buscador del encabezado.
 const enlaces = [
   { to: '/', icono: '🏠', texto: 'Inicio', end: true },
-  { to: '/hospitales', icono: '🏥', texto: 'Hospitales' },
-  { to: '/empresas', icono: '🏢', texto: 'Empresas' },
-  { to: '/encargos', icono: '📋', texto: 'Encargos' },
-  { to: '/calendario', icono: '📅', texto: 'Calendario' },
-  { to: '/buscar', icono: '🔍', texto: 'Buscar' },
+  { to: '/ventas', icono: '📊', texto: 'Ventas' },
+  { to: '/cartera', icono: '👥', texto: 'Cartera' },
+  { to: '/agenda', icono: '📅', texto: 'Agenda' },
 ]
 
 function claseNav({ isActive }) {
@@ -14,31 +14,38 @@ function claseNav({ isActive }) {
 }
 
 export default function Layout({ onLogout }) {
+  const navigate = useNavigate()
+
   return (
     <div className="app">
-      {/* Botón cerrar sesión flotante (visible en móvil) */}
-      {onLogout && (
-        <button className="logout-movil" onClick={onLogout} title="Cerrar sesión">Salir</button>
-      )}
+      {/* Encabezado superior (marca + buscador + salir) */}
+      <header className="topbar">
+        <div className="topbar-marca" onClick={() => navigate('/')}>
+          <img src="/swirl.png" alt="" width="26" height="26" />
+          <span>Zona <b>Cliente</b></span>
+        </div>
+
+        <button className="topbar-buscar" onClick={() => navigate('/buscar')}>
+          <span className="lupa">🔍</span>
+          <span className="ph">Buscar hospital, empresa, encargo…</span>
+        </button>
+
+        {onLogout && (
+          <button className="topbar-salir" onClick={onLogout} title="Cerrar sesión">
+            <span className="icono">🚪</span>
+            <span className="txt">Salir</span>
+          </button>
+        )}
+      </header>
 
       {/* Navegación lateral (escritorio) */}
       <aside className="sidebar">
-        <div className="marca">
-          <img src="/swirl.png" alt="" width="28" height="28" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
-          Zona Cliente
-        </div>
         {enlaces.map((e) => (
           <NavLink key={e.to} to={e.to} end={e.end} className={claseNav}>
             <span className="icono">{e.icono}</span>
             <span>{e.texto}</span>
           </NavLink>
         ))}
-        {onLogout && (
-          <button className="nav-item" onClick={onLogout} style={{ marginTop: 'auto', textAlign: 'left' }}>
-            <span className="icono">🚪</span>
-            <span>Cerrar sesión</span>
-          </button>
-        )}
       </aside>
 
       {/* Contenido */}

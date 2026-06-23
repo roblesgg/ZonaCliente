@@ -1,22 +1,17 @@
-// Panel de control conectado a datos reales: avisos, tareas del día y gráficos
-// (encargos por fase, beneficio potencial y mayor/menor beneficio) calculados
-// automáticamente a partir de los encargos y recordatorios guardados.
+// Panel de control conectado a datos reales: indicadores rápidos, avisos,
+// tareas del día y gráficos (encargos por fase y beneficio potencial),
+// calculados automáticamente a partir de los encargos y recordatorios.
 
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabaseConfigurado } from '../lib/supabase.js'
 import { listarEncargos, listarRecordatorios } from '../lib/datos.js'
+import { FASES_ABIERTAS } from '../lib/fases.js'
 import GraficoBarras from '../components/GraficoBarras.jsx'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
-// Fases "abiertas" (de trabajo) con su color para los gráficos.
-const FASES = [
-  { v: 'deteccion', t: 'Detección de necesidad', color: '#4338ca' },
-  { v: 'ofertas', t: 'Petición de ofertas', color: '#b45309' },
-  { v: 'comparativa', t: 'Comparativa y propuesta', color: '#0e7490' },
-  { v: 'demostracion', t: 'Demostración / prueba', color: '#a21caf' },
-  { v: 'compra', t: 'Propuesta de compra', color: '#15803d' },
-]
-const ABIERTAS = FASES.map((f) => f.v)
+const ABIERTAS = FASES_ABIERTAS.map((f) => f.v)
+const eur = (n) => Number(n || 0).toLocaleString('es-ES')
 
 function hoyISO() {
   const d = new Date()
@@ -27,6 +22,14 @@ function diasHasta(fechaISO) {
   const hoy = new Date(hoyISO())
   const f = new Date(fechaISO)
   return Math.round((f - hoy) / 86400000)
+}
+
+function saludo() {
+  const h = new Date().getHours()
+  if (h < 6) return 'Buenas noches'
+  if (h < 14) return 'Buenos días'
+  if (h < 21) return 'Buenas tardes'
+  return 'Buenas noches'
 }
 
 export default function Inicio() {
@@ -53,6 +56,7 @@ export default function Inicio() {
   if (cargando) return <p className="placeholder">Cargando…</p>
 
   const abiertos = encargos.filter((e) => ABIERTAS.includes(e.fase))
+  const ganados = encargos.filter((e) => e.fase === 'ganado')
 
   // Avisos: encargos con fecha límite hoy, pasada o en los próximos 3 días.
   const avisos = abiertos
@@ -69,15 +73,15 @@ export default function Inicio() {
     .filter((r) => r.recordatorio === hoy)
     .map((r) => r.texto + (r.encargos?.producto ? ` (${r.encargos.producto})` : ''))
 
-  // Gráfico: encargos por fase.
-  const datosFases = FASES.map((f) => ({
+  // Gráfico: encargos por fase (abiertas).
+  const datosFases = FASES_ABIERTAS.map((f) => ({
     etiqueta: f.t,
     valor: abiertos.filter((e) => e.fase === f.v).length,
     color: f.color,
   }))
 
   // Gráfico: beneficio potencial (comisión esperada) por fase.
-  const datosBeneficio = FASES.map((f) => ({
+  const datosBeneficio = FASES_ABIERTAS.map((f) => ({
     etiqueta: f.t,
     valor: abiertos
       .filter((e) => e.fase === f.v)
@@ -85,27 +89,28 @@ export default function Inicio() {
     color: f.color,
   }))
 
-  // Mayor / menor beneficio entre encargos abiertos con comisión.
-  const conComision = abiertos
-    .filter((e) => Number(e.comision_esperada) > 0)
-    .sort((a, b) => Number(b.comision_esperada) - Number(a.comision_esperada))
-  const mayor = conComision[0]
-  const menor = conComision[conComision.length - 1]
-  const totalPotencial = conComision.reduce((s, e) => s + Number(e.comision_esperada), 0)
-
+  const totalPotencial = abiertos.reduce((s, e) => s + (Number(e.comision_esperada) || 0), 0)
+  const totalGanado = ganados.reduce((s, e) => s + (Number(e.comision_esperada) || 0), 0)
   const hayDatos = encargos.length > 0
 
   return (
     <>
-      <h1 className="titulo-pagina">Buenos días 👋</h1>
+      <h1 className="titulo-pagina">{saludo()} 👋</h1>
 
-      {!hayDatos && (
+      {!hayDatos ? (
         <div className="tarjeta" style={{ marginBottom: '1rem' }}>
           <p className="placeholder" style={{ margin: 0 }}>
-            Aún no hay encargos. Crea el primero en la pestaña <strong>Encargos</strong> y este
-            panel se irá rellenando solo.
+            Aún no hay encargos. Crea el primero en la pestaña <Link to="/ventas" style={{ color: 'var(--azul)', fontWeight: 600 }}>Ventas</Link> y
+            este panel se irá rellenando solo.
           </p>
         </div>
+      ) : (
+        <Link to="/ventas" className="kpis" style={{ marginBottom: '1rem' }}>
+          <div className="kpi"><span className="kpi-num">{abiertos.length}</span><span className="kpi-lbl">En curso</span></div>
+          <div className="kpi"><span className="kpi-num">{eur(totalPotencial)} €</span><span className="kpi-lbl">Beneficio potencial</span></div>
+          <div className="kpi"><span className="kpi-num">{ganados.length}</span><span className="kpi-lbl">Ganados</span></div>
+          <div className="kpi"><span className="kpi-num">{eur(totalGanado)} €</span><span className="kpi-lbl">Beneficio ganado</span></div>
+        </Link>
       )}
 
       <div className="grid">
@@ -138,48 +143,16 @@ export default function Inicio() {
       </div>
 
       {hayDatos && (
-        <>
-          <div className="grid" style={{ marginTop: '1rem' }}>
-            <section className="tarjeta">
-              <h3>📊 Encargos por fase</h3>
-              <GraficoBarras datos={datosFases} />
-            </section>
-            <section className="tarjeta">
-              <h3>💶 Beneficio potencial por fase</h3>
-              <GraficoBarras datos={datosBeneficio} sufijo=" €" />
-            </section>
-          </div>
-
-          {conComision.length > 0 && (
-            <section className="tarjeta" style={{ marginTop: '1rem' }}>
-              <h3>🏆 Beneficio de los encargos abiertos</h3>
-              <div className="grid">
-                <div>
-                  <p className="placeholder" style={{ margin: '0 0 0.25rem' }}>Mayor beneficio</p>
-                  <strong>{mayor.producto}</strong>
-                  <div style={{ color: 'var(--verde)', fontWeight: 700 }}>
-                    {Number(mayor.comision_esperada).toLocaleString('es-ES')} €
-                  </div>
-                  <span className="placeholder">{mayor.hospitales?.nombre || ''}</span>
-                </div>
-                <div>
-                  <p className="placeholder" style={{ margin: '0 0 0.25rem' }}>Menor beneficio</p>
-                  <strong>{menor.producto}</strong>
-                  <div style={{ color: 'var(--ambar)', fontWeight: 700 }}>
-                    {Number(menor.comision_esperada).toLocaleString('es-ES')} €
-                  </div>
-                  <span className="placeholder">{menor.hospitales?.nombre || ''}</span>
-                </div>
-                <div>
-                  <p className="placeholder" style={{ margin: '0 0 0.25rem' }}>Total potencial</p>
-                  <strong style={{ fontSize: '1.4rem', color: 'var(--azul)' }}>
-                    {totalPotencial.toLocaleString('es-ES')} €
-                  </strong>
-                </div>
-              </div>
-            </section>
-          )}
-        </>
+        <div className="grid" style={{ marginTop: '1rem' }}>
+          <section className="tarjeta">
+            <h3>📊 Encargos por fase</h3>
+            <GraficoBarras datos={datosFases} />
+          </section>
+          <section className="tarjeta">
+            <h3>💶 Beneficio potencial por fase</h3>
+            <GraficoBarras datos={datosBeneficio} sufijo=" €" />
+          </section>
+        </div>
       )}
     </>
   )

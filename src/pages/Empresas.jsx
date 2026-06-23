@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { supabaseConfigurado } from '../lib/supabase.js'
 import { listarEmpresas, crearEmpresa, borrarEmpresa } from '../lib/datos.js'
-import SinConfigurar from '../components/SinConfigurar.jsx'
 
 const FORM_VACIO = { nombre: '', ciudad: '', telefono: '', email: '', responsable: '', productos: '' }
 
@@ -63,14 +62,20 @@ export default function Empresas() {
     return t ? t.replace(/\s/g, '') : ''
   }
 
-  if (!supabaseConfigurado) return <SinConfigurar titulo="🏢 Empresas" />
+  if (!supabaseConfigurado) {
+    return (
+      <div className="tarjeta">
+        <h3>⚙️ Falta configurar la base de datos</h3>
+        <p className="placeholder">Configura Supabase para guardar tus empresas (ver README).</p>
+      </div>
+    )
+  }
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 className="titulo-pagina" style={{ marginBottom: 0 }}>🏢 Empresas</h1>
+      <div className="cab-seccion">
         <button className="btn-primario" onClick={() => setMostrarForm((v) => !v)}>
-          {mostrarForm ? 'Cancelar' : '+ Nueva'}
+          {mostrarForm ? 'Cancelar' : '+ Nueva empresa'}
         </button>
       </div>
 

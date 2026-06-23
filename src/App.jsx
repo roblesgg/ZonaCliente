@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { supabase, supabaseConfigurado } from './lib/supabase.js'
 import Layout from './components/Layout.jsx'
 import Login from './pages/Login.jsx'
 import Inicio from './pages/Inicio.jsx'
-import Hospitales from './pages/Hospitales.jsx'
+import Cartera from './pages/Cartera.jsx'
 import HospitalDetalle from './pages/HospitalDetalle.jsx'
-import Empresas from './pages/Empresas.jsx'
-import Encargos from './pages/Encargos.jsx'
+import Ventas from './pages/Ventas.jsx'
 import EncargoDetalle from './pages/EncargoDetalle.jsx'
 import Calendario from './pages/Calendario.jsx'
 import Buscar from './pages/Buscar.jsx'
@@ -44,13 +43,18 @@ export default function App() {
     <Routes>
       <Route element={<Layout onLogout={cerrarSesion} />}>
         <Route index element={<Inicio />} />
-        <Route path="hospitales" element={<Hospitales />} />
-        <Route path="hospitales/:id" element={<HospitalDetalle />} />
-        <Route path="empresas" element={<Empresas />} />
-        <Route path="encargos" element={<Encargos />} />
+        <Route path="ventas" element={<Ventas />} />
         <Route path="encargos/:id" element={<EncargoDetalle />} />
-        <Route path="calendario" element={<Calendario />} />
+        <Route path="cartera" element={<Cartera />} />
+        <Route path="hospitales/:id" element={<HospitalDetalle />} />
+        <Route path="agenda" element={<Calendario />} />
         <Route path="buscar" element={<Buscar />} />
+
+        {/* Rutas antiguas -> nuevas, por si hay enlaces o marcadores guardados */}
+        <Route path="encargos" element={<Navigate to="/ventas" replace />} />
+        <Route path="hospitales" element={<Navigate to="/cartera" replace />} />
+        <Route path="empresas" element={<Navigate to="/cartera?t=empresas" replace />} />
+        <Route path="calendario" element={<Navigate to="/agenda" replace />} />
       </Route>
     </Routes>
   )

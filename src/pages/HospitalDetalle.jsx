@@ -100,8 +100,8 @@ export default function HospitalDetalle() {
 
   return (
     <>
-      <Link to="/hospitales" className="badge" style={{ background: 'var(--fondo)', color: 'var(--texto-suave)' }}>
-        ‹ Volver a hospitales
+      <Link to="/cartera" className="badge" style={{ background: 'var(--fondo)', color: 'var(--texto-suave)' }}>
+        ‹ Volver a la cartera
       </Link>
 
       <h1 className="titulo-pagina" style={{ marginTop: '0.75rem' }}>🏥 {hospital.nombre}</h1>
