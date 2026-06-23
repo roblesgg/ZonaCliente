@@ -185,7 +185,7 @@ export async function quitarProductoDeOportunidad(id) {
 export async function listarPersonasDeOportunidad(encargoId) {
   const { data, error } = await supabase
     .from('oportunidad_personas')
-    .select('id, persona_id, personas(nombre, tipo, cargo, telefonos, correo, empresas(nombre))')
+    .select('id, persona_id, descripcion, personas(nombre, tipo, cargo, telefonos, correo, empresas(nombre))')
     .eq('encargo_id', encargoId)
     .order('creado_en', { ascending: true })
   if (error) throw error
@@ -199,6 +199,12 @@ export async function añadirPersonaAOportunidad(encargoId, personaId) {
     .select().single()
   if (error) throw error
   return data
+}
+
+export async function actualizarDescripcionInvolucrado(id, descripcion) {
+  const { error } = await supabase
+    .from('oportunidad_personas').update({ descripcion }).eq('id', id)
+  if (error) throw error
 }
 
 export async function quitarPersonaDeOportunidad(id) {

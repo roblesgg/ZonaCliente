@@ -116,6 +116,7 @@ create table oportunidad_personas (
   id           uuid primary key default gen_random_uuid(),
   encargo_id   uuid not null references encargos(id) on delete cascade,
   persona_id   uuid not null references personas(id) on delete cascade,
+  descripcion  text,   -- notas de esta persona EN esta oportunidad (p. ej. del proveedor)
   creado_en    timestamptz not null default now(),
   unique (encargo_id, persona_id)
 );

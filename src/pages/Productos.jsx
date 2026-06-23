@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 import { supabaseConfigurado } from '../lib/supabase.js'
 import { listarProductos, crearProducto, actualizarProducto, borrarProducto } from '../lib/datos.js'
 import CamposExtra from '../components/CamposExtra.jsx'
+import { CampoMoneda } from '../components/CamposNumero.jsx'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
 const VACIO = { nombre: '', referencia: '', marca: '', descripcion: '', precio: '', extra: {} }
@@ -96,8 +97,8 @@ export default function Productos() {
               onChange={(e) => setForm({ ...form, referencia: e.target.value })} />
             <input className="campo" placeholder="Marca" value={form.marca}
               onChange={(e) => setForm({ ...form, marca: e.target.value })} />
-            <input className="campo" type="number" step="0.01" placeholder="Precio orientativo (€)"
-              value={form.precio} onChange={(e) => setForm({ ...form, precio: e.target.value })} />
+            <CampoMoneda value={form.precio} placeholder="Precio orientativo (€)"
+              onChange={(v) => setForm({ ...form, precio: v })} />
           </div>
           <textarea className="campo" rows={2} placeholder="Descripción / características"
             style={{ marginTop: '0.75rem' }} value={form.descripcion}

@@ -11,6 +11,7 @@ import {
 import { FASES, indiceFase } from '../lib/fases.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 import SelectorEmpresa from '../components/SelectorEmpresa.jsx'
+import { CampoMoneda, CampoPorcentaje } from '../components/CamposNumero.jsx'
 
 const FORM_VACIO = {
   producto: '', empresa_id: '', fase: 'deteccion', fecha_limite: '', ingresos_totales: '', comision_porcentaje: '',
@@ -134,12 +135,10 @@ export default function Ventas() {
             </select>
             <input className="campo" type="date" value={form.fecha_limite}
               onChange={(e) => setForm({ ...form, fecha_limite: e.target.value })} />
-            <input className="campo" type="number" step="0.01" placeholder="Ingresos totales (€)"
-              value={form.ingresos_totales}
-              onChange={(e) => setForm({ ...form, ingresos_totales: e.target.value })} />
-            <input className="campo" type="number" step="0.1" min="0" max="100" placeholder="Comisión (%)"
-              value={form.comision_porcentaje}
-              onChange={(e) => setForm({ ...form, comision_porcentaje: e.target.value })} />
+            <CampoMoneda value={form.ingresos_totales} placeholder="Ingresos totales (€)"
+              onChange={(v) => setForm({ ...form, ingresos_totales: v })} />
+            <CampoPorcentaje value={form.comision_porcentaje} placeholder="Comisión (%)"
+              onChange={(v) => setForm({ ...form, comision_porcentaje: v })} />
           </div>
 
           <div style={{ marginTop: '0.6rem' }}>
