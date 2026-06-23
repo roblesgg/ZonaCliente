@@ -6,20 +6,21 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabaseConfigurado } from '../lib/supabase.js'
 import {
-  listarEncargos, crearEncargo, actualizarEncargo, borrarEncargo, listarHospitales, obtenerAjustes,
+  listarEncargos, crearEncargo, actualizarEncargo, borrarEncargo, listarEmpresas, obtenerAjustes,
 } from '../lib/datos.js'
 import { FASES, indiceFase } from '../lib/fases.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
+import SelectorEmpresa from '../components/SelectorEmpresa.jsx'
 
 const FORM_VACIO = {
-  producto: '', hospital_id: '', fase: 'deteccion', fecha_limite: '', ingresos_totales: '',
+  producto: '', empresa_id: '', fase: 'deteccion', fecha_limite: '', ingresos_totales: '',
 }
 
 const eur = (n) => Number(n || 0).toLocaleString('es-ES')
 
 export default function Ventas() {
   const [encargos, setEncargos] = useState([])
-  const [hospitales, setHospitales] = useState([])
+  const [empresas, setEmpresas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
   const [form, setForm] = useState(FORM_VACIO)
@@ -31,9 +32,9 @@ export default function Ventas() {
     setCargando(true)
     setError(null)
     try {
-      const [encs, hosps, aj] = await Promise.all([listarEncargos(), listarHospitales(), obtenerAjustes()])
+      const [encs, emps, aj] = await Promise.all([listarEncargos(), listarEmpresas(), obtenerAjustes()])
       setEncargos(encs)
-      setHospitales(hosps)
+      setEmpresas(emps)
       setPct(Number(aj.comision_porcentaje) || 0)
     } catch (e) {
       setError(e.message)
@@ -57,7 +58,7 @@ export default function Ventas() {
       const comision = ingresos != null && pct > 0 ? Math.round(ingresos * pct) / 100 : null
       await crearEncargo({
         producto: form.producto,
-        hospital_id: form.hospital_id || null,
+        empresa_id: form.empresa_id || null,
         fase: form.fase,
         fecha_limite: form.fecha_limite || null,
         ingresos_totales: ingresos,
@@ -127,11 +128,6 @@ export default function Ventas() {
           <div className="campos">
             <input className="campo" placeholder="Título *" value={form.producto}
               onChange={(e) => setForm({ ...form, producto: e.target.value })} autoFocus />
-            <select className="campo" value={form.hospital_id}
-              onChange={(e) => setForm({ ...form, hospital_id: e.target.value })}>
-              <option value="">— Hospital —</option>
-              {hospitales.map((h) => <option key={h.id} value={h.id}>{h.nombre}</option>)}
-            </select>
             <select className="campo" value={form.fase}
               onChange={(e) => setForm({ ...form, fase: e.target.value })}>
               {FASES.map((f) => <option key={f.v} value={f.v}>{f.tLargo}</option>)}
@@ -142,6 +138,14 @@ export default function Ventas() {
               value={form.ingresos_totales}
               onChange={(e) => setForm({ ...form, ingresos_totales: e.target.value })} />
           </div>
+
+          <div style={{ marginTop: '0.6rem' }}>
+            <label className="placeholder" style={{ fontSize: '0.8rem' }}>Empresa (cliente)</label>
+            <SelectorEmpresa empresas={empresas} value={form.empresa_id}
+              onChange={(empresa_id) => setForm((f) => ({ ...f, empresa_id }))}
+              onCreada={() => listarEmpresas().then(setEmpresas)} />
+          </div>
+
           {pct > 0 && form.ingresos_totales && (
             <p className="placeholder" style={{ margin: '0.5rem 0 0', fontSize: '0.85rem' }}>
               Comisión estimada ({pct}%): <strong>{(Math.round(Number(form.ingresos_totales) * pct) / 100).toLocaleString('es-ES')} €</strong>
@@ -196,7 +200,7 @@ export default function Ventas() {
                           </Link>
                           <button className="btn-icono" onClick={() => eliminar(en.id)} title="Borrar">🗑️</button>
                         </div>
-                        <p className="card-sub">{en.hospitales?.nombre || 'Sin hospital'}</p>
+                        <p className="card-sub">{en.empresas?.nombre || 'Sin empresa'}</p>
                         {(en.comision_esperada || en.fecha_limite) && (
                           <p className="card-meta">
                             {en.comision_esperada ? <span className="card-eur">💶 {eur(en.comision_esperada)} €</span> : null}

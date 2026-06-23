@@ -5,7 +5,6 @@ import Layout from './components/Layout.jsx'
 import Login from './pages/Login.jsx'
 import Inicio from './pages/Inicio.jsx'
 import Cartera from './pages/Cartera.jsx'
-import HospitalDetalle from './pages/HospitalDetalle.jsx'
 import Ventas from './pages/Ventas.jsx'
 import EncargoDetalle from './pages/EncargoDetalle.jsx'
 import Calendario from './pages/Calendario.jsx'
@@ -48,7 +47,6 @@ export default function App() {
         <Route path="ventas" element={<Ventas />} />
         <Route path="encargos/:id" element={<EncargoDetalle />} />
         <Route path="cartera" element={<Cartera />} />
-        <Route path="hospitales/:id" element={<HospitalDetalle />} />
         <Route path="agenda" element={<Calendario />} />
         <Route path="buscar" element={<Buscar />} />
         <Route path="ajustes" element={<Ajustes />} />
@@ -57,6 +55,7 @@ export default function App() {
         {/* Rutas antiguas -> nuevas, por si hay enlaces o marcadores guardados */}
         <Route path="encargos" element={<Navigate to="/ventas" replace />} />
         <Route path="hospitales" element={<Navigate to="/cartera" replace />} />
+        <Route path="hospitales/:id" element={<Navigate to="/cartera" replace />} />
         <Route path="empresas" element={<Navigate to="/cartera?t=empresas" replace />} />
         <Route path="calendario" element={<Navigate to="/agenda" replace />} />
       </Route>

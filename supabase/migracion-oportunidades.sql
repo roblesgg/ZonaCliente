@@ -1,22 +1,76 @@
 -- =============================================================
--- Zona Cliente — Migración: Oportunidades, Productos, Socios y campos extra
+-- Zona Cliente — Modelo nuevo (empresas + personas + oportunidades)
 --
--- Amplía el modelo sin borrar datos. Es IDEMPOTENTE (se puede ejecutar
--- varias veces sin error).
+-- REBUILD LIMPIO: reemplaza el modelo antiguo (hospitales, servicios,
+-- contactos, etc.) por el nuevo. Pensado para datos de PRUEBA: BORRA las
+-- tablas viejas y las recrea. Es idempotente (se puede ejecutar varias veces).
 --
 -- Cómo usarla: Supabase -> SQL Editor -> pega este archivo -> Run.
 --
--- Nota: por dentro la tabla de oportunidades sigue llamándose "encargos" y la
--- de socios "empresas" (para no romper los datos ni las claves existentes);
--- en la interfaz aparecen como "Oportunidades" y "Socios".
+-- Modelo:
+--   EMPRESAS  = organizaciones tipadas (hospital, clínica, fábrica, proveedor…)
+--   PERSONAS  = socios / clientes / proveedores (mismos campos, una tabla)
+--   ENCARGOS  = oportunidades (ligadas a una empresa, con personas y productos)
 -- =============================================================
 
 create extension if not exists "pgcrypto";
 
 -- -------------------------------------------------------------
--- 1) Catálogo de PRODUCTOS (reutilizable entre oportunidades)
+-- 0) Fuera lo antiguo (datos de prueba; nada que conservar)
 -- -------------------------------------------------------------
-create table if not exists productos (
+drop table if exists documentos             cascade;
+drop table if exists notas                  cascade;
+drop table if exists ofertas                cascade;
+drop table if exists oportunidad_contactos  cascade;
+drop table if exists oportunidad_personas   cascade;
+drop table if exists oportunidad_productos   cascade;
+drop table if exists encargos               cascade;
+drop table if exists contactos              cascade;
+drop table if exists servicios              cascade;
+drop table if exists clientes               cascade;
+drop table if exists hospitales             cascade;
+drop table if exists empresas               cascade;
+drop table if exists productos              cascade;
+drop table if exists ajustes                cascade;
+
+-- -------------------------------------------------------------
+-- 1) EMPRESAS (organizaciones: hospital, clínica, fábrica, proveedor, otro)
+-- -------------------------------------------------------------
+create table empresas (
+  id          uuid primary key default gen_random_uuid(),
+  nombre      text not null,
+  tipo        text,                 -- hospital / clinica / fabrica / proveedor / otro
+  ciudad      text,
+  provincia   text,
+  direccion   text,
+  telefono    text,
+  email       text,
+  notas       text,
+  extra       jsonb not null default '{}'::jsonb,
+  creado_en   timestamptz not null default now()
+);
+
+-- -------------------------------------------------------------
+-- 2) PERSONAS (socios / clientes / proveedores — mismos campos)
+--    Teléfonos con nombre: array JSON de objetos { nombre, numero }
+-- -------------------------------------------------------------
+create table personas (
+  id                uuid primary key default gen_random_uuid(),
+  tipo              text not null,   -- socio / cliente / proveedor
+  nombre            text not null,
+  empresa_id        uuid references empresas(id) on delete set null,
+  cargo             text,
+  descripcion_cargo text,
+  telefonos         jsonb not null default '[]'::jsonb,
+  correo            text,
+  extra             jsonb not null default '{}'::jsonb,
+  creado_en         timestamptz not null default now()
+);
+
+-- -------------------------------------------------------------
+-- 3) PRODUCTOS (catálogo reutilizable entre oportunidades)
+-- -------------------------------------------------------------
+create table productos (
   id           uuid primary key default gen_random_uuid(),
   nombre       text not null,
   referencia   text,
@@ -28,25 +82,25 @@ create table if not exists productos (
 );
 
 -- -------------------------------------------------------------
--- 1b) CLIENTES (personas/entidades cliente, distintas de los hospitales)
---     nombre, cargo, varios teléfonos, email y campos personalizados.
+-- 4) ENCARGOS = OPORTUNIDADES (ligadas a una empresa)
 -- -------------------------------------------------------------
-create table if not exists clientes (
-  id           uuid primary key default gen_random_uuid(),
-  nombre       text not null,
-  cargo        text,
-  email        text,
-  -- Teléfonos con nombre: array JSON de objetos { nombre, numero }
-  telefonos    jsonb not null default '[]'::jsonb,
-  notas        text,
-  extra        jsonb not null default '{}'::jsonb,
-  creado_en    timestamptz not null default now()
+create table encargos (
+  id                uuid primary key default gen_random_uuid(),
+  producto          text,            -- título de la oportunidad
+  empresa_id        uuid references empresas(id) on delete set null,
+  fase              text not null default 'deteccion',
+  descripcion       text,
+  ingresos_totales  numeric(12,2),
+  comision_esperada numeric(12,2),
+  fecha_limite      date,
+  extra             jsonb not null default '{}'::jsonb,
+  creado_en         timestamptz not null default now()
 );
 
 -- -------------------------------------------------------------
--- 2) Líneas de la oportunidad: qué PRODUCTOS y en qué cantidad
+-- 5) Líneas de la oportunidad: qué PRODUCTOS y en qué cantidad
 -- -------------------------------------------------------------
-create table if not exists oportunidad_productos (
+create table oportunidad_productos (
   id           uuid primary key default gen_random_uuid(),
   encargo_id   uuid not null references encargos(id) on delete cascade,
   producto_id  uuid references productos(id) on delete set null,
@@ -55,20 +109,43 @@ create table if not exists oportunidad_productos (
 );
 
 -- -------------------------------------------------------------
--- 3) CONTACTOS involucrados en una oportunidad (varios)
+-- 6) PERSONAS involucradas en una oportunidad (varias)
 -- -------------------------------------------------------------
-create table if not exists oportunidad_contactos (
+create table oportunidad_personas (
   id           uuid primary key default gen_random_uuid(),
   encargo_id   uuid not null references encargos(id) on delete cascade,
-  contacto_id  uuid not null references contactos(id) on delete cascade,
+  persona_id   uuid not null references personas(id) on delete cascade,
   creado_en    timestamptz not null default now(),
-  unique (encargo_id, contacto_id)
+  unique (encargo_id, persona_id)
 );
 
 -- -------------------------------------------------------------
--- 4) AJUSTES globales (una sola fila): % de comisión, etc.
+-- 7) OFERTAS de proveedores (empresas) para comparar precios
 -- -------------------------------------------------------------
-create table if not exists ajustes (
+create table ofertas (
+  id           uuid primary key default gen_random_uuid(),
+  encargo_id   uuid not null references encargos(id) on delete cascade,
+  empresa_id   uuid references empresas(id) on delete set null,
+  precio       numeric(12,2),
+  notas        text,
+  creado_en    timestamptz not null default now()
+);
+
+-- -------------------------------------------------------------
+-- 8) NOTAS de seguimiento (con recordatorios / fechas límite)
+-- -------------------------------------------------------------
+create table notas (
+  id            uuid primary key default gen_random_uuid(),
+  encargo_id    uuid references encargos(id) on delete cascade,
+  texto         text not null,
+  recordatorio  date,
+  creado_en     timestamptz not null default now()
+);
+
+-- -------------------------------------------------------------
+-- 9) AJUSTES globales (una sola fila): % de comisión, etc.
+-- -------------------------------------------------------------
+create table ajustes (
   id                   int primary key default 1,
   comision_porcentaje  numeric(5,2) not null default 0,
   nombre               text,
@@ -78,43 +155,28 @@ create table if not exists ajustes (
 insert into ajustes (id) values (1) on conflict (id) do nothing;
 
 -- -------------------------------------------------------------
--- 5) Campos nuevos en OPORTUNIDADES (tabla encargos)
+-- 10) Índices
 -- -------------------------------------------------------------
-alter table encargos add column if not exists descripcion      text;
-alter table encargos add column if not exists ingresos_totales numeric(12,2);
--- Los productos ahora viven en oportunidad_productos: el texto deja de ser obligatorio.
-alter table encargos alter column producto drop not null;
+create index if not exists idx_personas_tipo      on personas(tipo);
+create index if not exists idx_personas_empresa    on personas(empresa_id);
+create index if not exists idx_empresas_tipo       on empresas(tipo);
+create index if not exists idx_encargos_fase       on encargos(fase);
+create index if not exists idx_encargos_empresa    on encargos(empresa_id);
+create index if not exists idx_oport_productos_enc on oportunidad_productos(encargo_id);
+create index if not exists idx_oport_personas_enc  on oportunidad_personas(encargo_id);
+create index if not exists idx_ofertas_encargo     on ofertas(encargo_id);
+create index if not exists idx_notas_encargo       on notas(encargo_id);
 
 -- -------------------------------------------------------------
--- 6) Teléfonos múltiples (servicios y contactos)
--- -------------------------------------------------------------
--- Teléfonos con nombre: array JSON de objetos { nombre, numero }
-alter table servicios add column if not exists telefono  text;
-alter table servicios add column if not exists telefonos jsonb not null default '[]'::jsonb;
-alter table contactos add column if not exists telefonos jsonb not null default '[]'::jsonb;
-
--- -------------------------------------------------------------
--- 7) Campos PERSONALIZADOS (JSON) en todas las fichas
--- -------------------------------------------------------------
-alter table hospitales add column if not exists extra jsonb not null default '{}'::jsonb;
-alter table servicios  add column if not exists extra jsonb not null default '{}'::jsonb;
-alter table contactos  add column if not exists extra jsonb not null default '{}'::jsonb;
-alter table empresas   add column if not exists extra jsonb not null default '{}'::jsonb;
-alter table encargos   add column if not exists extra jsonb not null default '{}'::jsonb;
-
--- -------------------------------------------------------------
--- 8) Índices
--- -------------------------------------------------------------
-create index if not exists idx_oport_productos_encargo on oportunidad_productos(encargo_id);
-create index if not exists idx_oport_contactos_encargo on oportunidad_contactos(encargo_id);
-
--- -------------------------------------------------------------
--- 9) Seguridad (RLS) en las tablas nuevas: solo usuarios con sesión
+-- 11) Seguridad (RLS): solo usuarios con sesión iniciada
 -- -------------------------------------------------------------
 do $$
 declare
   t text;
-  tablas text[] := array['clientes', 'productos', 'oportunidad_productos', 'oportunidad_contactos', 'ajustes'];
+  tablas text[] := array[
+    'empresas', 'personas', 'productos', 'encargos',
+    'oportunidad_productos', 'oportunidad_personas', 'ofertas', 'notas', 'ajustes'
+  ];
 begin
   foreach t in array tablas loop
     execute format('alter table %I enable row level security;', t);

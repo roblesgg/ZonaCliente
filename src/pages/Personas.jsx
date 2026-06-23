@@ -1,19 +1,27 @@
-// Listado de CLIENTES (personas/entidades cliente, distintas de los hospitales):
-// listar, alta y borrar. Permite varios teléfonos y campos personalizados.
+// Listado genérico de PERSONAS de un tipo (cliente / socio / proveedor).
+// Todas comparten los mismos campos: nombre, empresa, cargo, descripción del
+// cargo, varios teléfonos (con nombre), correo y campos personalizados.
 
 import { useEffect, useState } from 'react'
 import { supabaseConfigurado } from '../lib/supabase.js'
-import { listarClientes, crearCliente, borrarCliente } from '../lib/datos.js'
+import { listarPersonas, crearPersona, borrarPersona, listarEmpresas } from '../lib/datos.js'
+import { TIPOS_PERSONA, etiquetaTipoEmpresa } from '../lib/constantes.js'
 import AccionesContacto from '../components/AccionesContacto.jsx'
 import CamposExtra from '../components/CamposExtra.jsx'
+import SelectorEmpresa from '../components/SelectorEmpresa.jsx'
 
-const FORM_VACIO = { nombre: '', cargo: '', email: '', telefonos: [{ nombre: '', numero: '' }], notas: '', extra: {} }
+const vacio = () => ({
+  nombre: '', empresa_id: '', cargo: '', descripcion_cargo: '',
+  telefonos: [{ nombre: '', numero: '' }], correo: '', extra: {},
+})
 
-export default function Clientes() {
-  const [clientes, setClientes] = useState([])
+export default function Personas({ tipo }) {
+  const meta = TIPOS_PERSONA[tipo] || { t: 'Persona', plural: 'Personas', icono: '👤' }
+  const [personas, setPersonas] = useState([])
+  const [empresas, setEmpresas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
-  const [form, setForm] = useState(FORM_VACIO)
+  const [form, setForm] = useState(vacio())
   const [mostrarForm, setMostrarForm] = useState(false)
   const [guardando, setGuardando] = useState(false)
 
@@ -21,7 +29,9 @@ export default function Clientes() {
     setCargando(true)
     setError(null)
     try {
-      setClientes(await listarClientes())
+      const [pers, emps] = await Promise.all([listarPersonas(tipo), listarEmpresas()])
+      setPersonas(pers)
+      setEmpresas(emps)
     } catch (e) {
       setError(e.message)
     } finally {
@@ -29,10 +39,13 @@ export default function Clientes() {
     }
   }
 
+  // Recargar al cambiar de tipo (cuando se reutiliza la misma pantalla).
   useEffect(() => {
     if (supabaseConfigurado) cargar()
     else setCargando(false)
-  }, [])
+    setForm(vacio())
+    setMostrarForm(false)
+  }, [tipo])
 
   function setTelefono(i, campo, v) {
     setForm((f) => {
@@ -57,15 +70,17 @@ export default function Clientes() {
       const telefonos = (form.telefonos || [])
         .map((t) => ({ nombre: (t.nombre || '').trim(), numero: (t.numero || '').trim() }))
         .filter((t) => t.numero)
-      await crearCliente({
+      await crearPersona({
+        tipo,
         nombre: form.nombre.trim(),
+        empresa_id: form.empresa_id || null,
         cargo: form.cargo || null,
-        email: form.email || null,
+        descripcion_cargo: form.descripcion_cargo || null,
         telefonos,
-        notas: form.notas || null,
+        correo: form.correo || null,
         extra: form.extra || {},
       })
-      setForm(FORM_VACIO)
+      setForm(vacio())
       setMostrarForm(false)
       await cargar()
     } catch (e) {
@@ -76,9 +91,9 @@ export default function Clientes() {
   }
 
   async function eliminar(id) {
-    if (!confirm('¿Borrar este cliente?')) return
+    if (!confirm(`¿Borrar ${meta.t.toLowerCase()}?`)) return
     try {
-      await borrarCliente(id)
+      await borrarPersona(id)
       await cargar()
     } catch (e) {
       setError(e.message)
@@ -89,7 +104,7 @@ export default function Clientes() {
     return (
       <div className="tarjeta">
         <h3>⚙️ Falta configurar la base de datos</h3>
-        <p className="placeholder">Configura Supabase para guardar tus clientes (ver README).</p>
+        <p className="placeholder">Configura Supabase para guardar tus {meta.plural.toLowerCase()} (ver README).</p>
       </div>
     )
   }
@@ -98,23 +113,33 @@ export default function Clientes() {
     <>
       <div className="cab-seccion">
         <button className="btn-primario" onClick={() => setMostrarForm((v) => !v)}>
-          {mostrarForm ? 'Cancelar' : '+ Nuevo cliente'}
+          {mostrarForm ? 'Cancelar' : `+ Nuevo ${meta.t.toLowerCase()}`}
         </button>
       </div>
 
       {mostrarForm && (
         <form className="tarjeta" style={{ margin: '1rem 0' }} onSubmit={enviar}>
-          <h3>Nuevo cliente</h3>
+          <h3>Nuevo {meta.t.toLowerCase()}</h3>
           <div className="campos">
             <input className="campo" placeholder="Nombre *" value={form.nombre}
               onChange={(e) => setForm({ ...form, nombre: e.target.value })} autoFocus />
             <input className="campo" placeholder="Cargo" value={form.cargo}
               onChange={(e) => setForm({ ...form, cargo: e.target.value })} />
-            <input className="campo" placeholder="Email" value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <input className="campo" placeholder="Descripción del cargo" value={form.descripcion_cargo}
+              onChange={(e) => setForm({ ...form, descripcion_cargo: e.target.value })} />
+            <input className="campo" placeholder="Correo" value={form.correo}
+              onChange={(e) => setForm({ ...form, correo: e.target.value })} />
           </div>
 
-          {/* Teléfonos con nombre: se pueden añadir varios */}
+          {/* Empresa (con creación al vuelo) */}
+          <div style={{ marginTop: '0.6rem' }}>
+            <label className="placeholder" style={{ fontSize: '0.8rem' }}>Empresa</label>
+            <SelectorEmpresa empresas={empresas} value={form.empresa_id}
+              onChange={(id) => setForm((f) => ({ ...f, empresa_id: id }))}
+              onCreada={() => listarEmpresas().then(setEmpresas)} />
+          </div>
+
+          {/* Teléfonos con nombre */}
           <div style={{ marginTop: '0.6rem' }}>
             <label className="placeholder" style={{ fontSize: '0.8rem' }}>Teléfonos</label>
             {(form.telefonos || []).map((tel, i) => (
@@ -133,15 +158,12 @@ export default function Clientes() {
               onClick={añadirTelefono}>+ Añadir teléfono</button>
           </div>
 
-          <textarea className="campo" rows={2} placeholder="Notas" style={{ marginTop: '0.6rem' }}
-            value={form.notas} onChange={(e) => setForm({ ...form, notas: e.target.value })} />
-
           <div style={{ marginTop: '0.6rem' }}>
             <CamposExtra valor={form.extra} onChange={(extra) => setForm({ ...form, extra })} />
           </div>
 
           <button className="btn-primario" type="submit" disabled={guardando} style={{ marginTop: '0.75rem' }}>
-            {guardando ? 'Guardando…' : 'Guardar cliente'}
+            {guardando ? 'Guardando…' : `Guardar ${meta.t.toLowerCase()}`}
           </button>
         </form>
       )}
@@ -154,23 +176,30 @@ export default function Clientes() {
 
       {cargando ? (
         <p className="placeholder">Cargando…</p>
-      ) : clientes.length === 0 ? (
+      ) : personas.length === 0 ? (
         <p className="placeholder" style={{ marginTop: '1rem' }}>
-          Aún no hay clientes. Pulsa “+ Nuevo cliente” para añadir el primero.
+          Aún no hay {meta.plural.toLowerCase()}. Pulsa “+ Nuevo {meta.t.toLowerCase()}”.
         </p>
       ) : (
         <div className="grid" style={{ marginTop: '1rem' }}>
-          {clientes.map((c) => (
-            <article key={c.id} className="tarjeta">
+          {personas.map((p) => (
+            <article key={p.id} className="tarjeta">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                <h3>{c.nombre}</h3>
-                <button className="btn-icono" onClick={() => eliminar(c.id)} title="Borrar">🗑️</button>
+                <h3>{p.nombre}</h3>
+                <button className="btn-icono" onClick={() => eliminar(p.id)} title="Borrar">🗑️</button>
               </div>
-              {c.cargo && <p className="placeholder" style={{ margin: '0 0 0.5rem' }}>{c.cargo}</p>}
-              {c.notas && <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem' }}>{c.notas}</p>}
-              <AccionesContacto telefonos={c.telefonos} email={c.email} />
+              {(p.cargo || p.empresas?.nombre) && (
+                <p className="placeholder" style={{ margin: '0 0 0.3rem' }}>
+                  {[p.cargo, p.empresas?.nombre].filter(Boolean).join(' · ')}
+                  {p.empresas?.tipo ? ` (${etiquetaTipoEmpresa(p.empresas.tipo)})` : ''}
+                </p>
+              )}
+              {p.descripcion_cargo && (
+                <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem' }}>{p.descripcion_cargo}</p>
+              )}
+              <AccionesContacto telefonos={p.telefonos} email={p.correo} />
               <div style={{ marginTop: '0.4rem' }}>
-                <CamposExtra valor={c.extra} editable={false} />
+                <CamposExtra valor={p.extra} editable={false} />
               </div>
             </article>
           ))}

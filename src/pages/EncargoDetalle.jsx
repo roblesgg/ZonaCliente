@@ -1,7 +1,7 @@
 // Ficha de una OPORTUNIDAD: datos e ingresos (con comisión automática según el
-// % de Ajustes), productos involucrados (varios, con cantidad), contactos
-// involucrados (varios), ofertas de socios, campos personalizados y notas de
-// seguimiento con recordatorios.
+// % de Ajustes), empresa, productos (varios, con cantidad), personas
+// involucradas (varias), ofertas de proveedores, campos personalizados y notas
+// de seguimiento con recordatorios.
 
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
@@ -12,11 +12,13 @@ import {
   listarNotasDeEncargo, crearNota, borrarNota, listarEmpresas,
   listarProductos, crearProducto,
   listarProductosDeOportunidad, añadirProductoAOportunidad, actualizarLineaProducto, quitarProductoDeOportunidad,
-  listarContactosDeHospital, listarContactosDeOportunidad, añadirContactoAOportunidad, quitarContactoDeOportunidad,
+  listarPersonas, listarPersonasDeOportunidad, añadirPersonaAOportunidad, quitarPersonaDeOportunidad,
   obtenerAjustes,
 } from '../lib/datos.js'
 import { FASES, faseInfo } from '../lib/fases.js'
+import { TIPOS_PERSONA } from '../lib/constantes.js'
 import CamposExtra from '../components/CamposExtra.jsx'
+import SelectorEmpresa from '../components/SelectorEmpresa.jsx'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
 const eur = (n) => Number(n || 0).toLocaleString('es-ES')
@@ -26,7 +28,7 @@ export default function EncargoDetalle() {
   const [encargo, setEncargo] = useState(null)
   const [lineas, setLineas] = useState([])
   const [involucrados, setInvolucrados] = useState([])
-  const [contactosHosp, setContactosHosp] = useState([])
+  const [personas, setPersonas] = useState([])
   const [catalogo, setCatalogo] = useState([])
   const [ofertas, setOfertas] = useState([])
   const [notas, setNotas] = useState([])
@@ -36,34 +38,34 @@ export default function EncargoDetalle() {
   const [error, setError] = useState(null)
 
   // Edición de datos principales
-  const [datos, setDatos] = useState({ producto: '', descripcion: '', fase: 'deteccion', ingresos_totales: '', comision_esperada: '', extra: {} })
+  const [datos, setDatos] = useState({ producto: '', empresa_id: '', descripcion: '', fase: 'deteccion', ingresos_totales: '', comision_esperada: '', extra: {} })
   const [guardando, setGuardando] = useState(false)
   const [guardado, setGuardado] = useState(false)
 
   // Formularios auxiliares
   const [nuevaLinea, setNuevaLinea] = useState({ producto_id: '', cantidad: 1 })
   const [productoRapido, setProductoRapido] = useState('')
-  const [contactoSel, setContactoSel] = useState('')
+  const [personaSel, setPersonaSel] = useState('')
   const [oferta, setOferta] = useState({ empresa_id: '', precio: '', notas: '' })
   const [nota, setNota] = useState({ texto: '', recordatorio: '' })
 
   async function cargar() {
     setCargando(true); setError(null)
     try {
-      const [enc, lin, inv, ofs, nts, emps, cat, aj] = await Promise.all([
-        obtenerEncargo(id), listarProductosDeOportunidad(id), listarContactosDeOportunidad(id),
+      const [enc, lin, inv, ofs, nts, emps, cat, pers, aj] = await Promise.all([
+        obtenerEncargo(id), listarProductosDeOportunidad(id), listarPersonasDeOportunidad(id),
         listarOfertasDeEncargo(id), listarNotasDeEncargo(id), listarEmpresas(),
-        listarProductos(), obtenerAjustes(),
+        listarProductos(), listarPersonas(), obtenerAjustes(),
       ])
       setEncargo(enc); setLineas(lin); setInvolucrados(inv)
-      setOfertas(ofs); setNotas(nts); setEmpresas(emps); setCatalogo(cat)
+      setOfertas(ofs); setNotas(nts); setEmpresas(emps); setCatalogo(cat); setPersonas(pers)
       setPct(Number(aj.comision_porcentaje) || 0)
       setDatos({
-        producto: enc.producto || '', descripcion: enc.descripcion || '', fase: enc.fase || 'deteccion',
+        producto: enc.producto || '', empresa_id: enc.empresa_id || '',
+        descripcion: enc.descripcion || '', fase: enc.fase || 'deteccion',
         ingresos_totales: enc.ingresos_totales ?? '', comision_esperada: enc.comision_esperada ?? '',
         extra: enc.extra || {},
       })
-      if (enc.hospital_id) setContactosHosp(await listarContactosDeHospital(enc.hospital_id))
     } catch (e) {
       setError(e.message)
     } finally {
@@ -88,6 +90,7 @@ export default function EncargoDetalle() {
     try {
       await actualizarEncargo(id, {
         producto: datos.producto || null,
+        empresa_id: datos.empresa_id || null,
         descripcion: datos.descripcion || null,
         fase: datos.fase,
         ingresos_totales: datos.ingresos_totales === '' ? null : Number(datos.ingresos_totales),
@@ -132,8 +135,8 @@ export default function EncargoDetalle() {
 
   async function añadirInvolucrado(e) {
     e.preventDefault()
-    if (!contactoSel) return
-    try { await añadirContactoAOportunidad(id, contactoSel); setContactoSel(''); await cargar() }
+    if (!personaSel) return
+    try { await añadirPersonaAOportunidad(id, personaSel); setPersonaSel(''); await cargar() }
     catch (e) { setError(e.message) }
   }
 
@@ -166,8 +169,8 @@ export default function EncargoDetalle() {
 
   const f = faseInfo(datos.fase)
   const precioMin = Math.min(...ofertas.filter((o) => o.precio != null).map((o) => Number(o.precio)))
-  const idsInvolucrados = involucrados.map((x) => x.contacto_id)
-  const contactosDisponibles = contactosHosp.filter((c) => !idsInvolucrados.includes(c.id))
+  const idsInvolucrados = involucrados.map((x) => x.persona_id)
+  const personasDisponibles = personas.filter((p) => !idsInvolucrados.includes(p.id))
 
   return (
     <>
@@ -180,7 +183,7 @@ export default function EncargoDetalle() {
       </h1>
       <span className="badge" style={{ background: f.c, color: f.tx }}>{f.tLargo}</span>
       <p className="placeholder" style={{ marginTop: '0.5rem' }}>
-        {encargo.hospitales?.nombre || 'Sin hospital'}
+        {encargo.empresas?.nombre || 'Sin empresa'}
       </p>
 
       {error && (
@@ -200,6 +203,14 @@ export default function EncargoDetalle() {
             {FASES.map((x) => <option key={x.v} value={x.v}>{x.tLargo}</option>)}
           </select>
         </div>
+
+        <div style={{ marginTop: '0.75rem' }}>
+          <label className="placeholder" style={{ fontSize: '0.8rem' }}>Empresa (cliente)</label>
+          <SelectorEmpresa empresas={empresas} value={datos.empresa_id}
+            onChange={(empresa_id) => setDatos((d) => ({ ...d, empresa_id }))}
+            onCreada={() => listarEmpresas().then(setEmpresas)} />
+        </div>
+
         <textarea className="campo" rows={2} placeholder="Descripción" style={{ marginTop: '0.75rem' }}
           value={datos.descripcion} onChange={(e) => setDatos({ ...datos, descripcion: e.target.value })} />
 
@@ -285,56 +296,57 @@ export default function EncargoDetalle() {
         </form>
       </section>
 
-      {/* Contactos involucrados */}
+      {/* Personas involucradas */}
       <section className="tarjeta" style={{ marginTop: '1rem' }}>
-        <h3>👤 Contactos involucrados</h3>
+        <h3>👤 Personas involucradas</h3>
         {involucrados.length === 0 ? (
           <p className="placeholder">Nadie añadido todavía.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            {involucrados.map((x) => (
-              <div key={x.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '0.4rem 0.6rem', background: 'var(--fondo)', borderRadius: 'var(--radio)' }}>
-                <span>
-                  <strong>{x.contactos?.nombre} {x.contactos?.apellidos || ''}</strong>
-                  {x.contactos?.cargo && <span className="placeholder"> · {x.contactos.cargo}</span>}
-                </span>
-                <button className="btn-icono" title="Quitar"
-                  onClick={async () => { await quitarContactoDeOportunidad(x.id); cargar() }}>🗑️</button>
-              </div>
-            ))}
+            {involucrados.map((x) => {
+              const meta = TIPOS_PERSONA[x.personas?.tipo]
+              return (
+                <div key={x.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '0.4rem 0.6rem', background: 'var(--fondo)', borderRadius: 'var(--radio)' }}>
+                  <span>
+                    {meta ? `${meta.icono} ` : ''}<strong>{x.personas?.nombre}</strong>
+                    {x.personas?.cargo && <span className="placeholder"> · {x.personas.cargo}</span>}
+                    {x.personas?.empresas?.nombre && <span className="placeholder"> · {x.personas.empresas.nombre}</span>}
+                  </span>
+                  <button className="btn-icono" title="Quitar"
+                    onClick={async () => { await quitarPersonaDeOportunidad(x.id); cargar() }}>🗑️</button>
+                </div>
+              )
+            })}
           </div>
         )}
 
-        {encargo.hospital_id ? (
-          contactosDisponibles.length > 0 ? (
-            <form onSubmit={añadirInvolucrado} style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <select className="campo" value={contactoSel} style={{ flex: 1, minWidth: 160 }}
-                onChange={(e) => setContactoSel(e.target.value)}>
-                <option value="">— Contacto del hospital —</option>
-                {contactosDisponibles.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre} {c.apellidos || ''}{c.cargo ? ` (${c.cargo})` : ''}
+        {personasDisponibles.length > 0 ? (
+          <form onSubmit={añadirInvolucrado} style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <select className="campo" value={personaSel} style={{ flex: 1, minWidth: 160 }}
+              onChange={(e) => setPersonaSel(e.target.value)}>
+              <option value="">— Persona (cliente / socio / proveedor) —</option>
+              {personasDisponibles.map((p) => {
+                const meta = TIPOS_PERSONA[p.tipo]
+                return (
+                  <option key={p.id} value={p.id}>
+                    {p.nombre}{p.empresas?.nombre ? ` — ${p.empresas.nombre}` : ''}{meta ? ` (${meta.t})` : ''}
                   </option>
-                ))}
-              </select>
-              <button className="btn-primario" type="submit">+ Añadir</button>
-            </form>
-          ) : (
-            <p className="placeholder" style={{ marginTop: '0.5rem' }}>
-              No quedan contactos por añadir. Crea más en la ficha del hospital.
-            </p>
-          )
+                )
+              })}
+            </select>
+            <button className="btn-primario" type="submit">+ Añadir</button>
+          </form>
         ) : (
           <p className="placeholder" style={{ marginTop: '0.5rem' }}>
-            Esta oportunidad no tiene hospital asignado, así que no hay contactos que elegir.
+            No quedan personas por añadir. Crea más en la Cartera.
           </p>
         )}
       </section>
 
       {/* Ofertas / comparativa */}
       <section className="tarjeta" style={{ marginTop: '1rem' }}>
-        <h3>💼 Ofertas de socios</h3>
+        <h3>💼 Ofertas de proveedores</h3>
         {ofertas.length === 0 ? (
           <p className="placeholder">Aún no hay ofertas. Añade una abajo para comparar precios.</p>
         ) : (
@@ -345,7 +357,7 @@ export default function EncargoDetalle() {
                 <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   padding: '0.5rem 0.7rem', borderRadius: 'var(--radio)', background: esMin ? '#dcfce7' : 'var(--fondo)' }}>
                   <div>
-                    <strong>{o.empresas?.nombre || 'Socio'}</strong>
+                    <strong>{o.empresas?.nombre || 'Proveedor'}</strong>
                     {esMin && <span className="badge" style={{ marginLeft: '0.5rem', background: 'var(--verde)', color: '#fff' }}>Más barata</span>}
                     {o.notas && <div className="placeholder" style={{ fontSize: '0.8rem' }}>{o.notas}</div>}
                   </div>
@@ -363,7 +375,7 @@ export default function EncargoDetalle() {
           <div className="campos">
             <select className="campo" value={oferta.empresa_id}
               onChange={(e) => setOferta({ ...oferta, empresa_id: e.target.value })}>
-              <option value="">— Socio —</option>
+              <option value="">— Proveedor —</option>
               {empresas.map((em) => <option key={em.id} value={em.id}>{em.nombre}</option>)}
             </select>
             <input className="campo" type="number" placeholder="Precio (€)" value={oferta.precio}

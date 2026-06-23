@@ -1,39 +1,37 @@
-// Cartera: agrupa Hospitales y Empresas bajo una sola sección con sub-pestañas,
-// para aligerar la barra de navegación principal.
+// Cartera: agrupa Clientes, Socios, Proveedores (personas) y Empresas
+// (organizaciones) bajo una sola sección con sub-pestañas.
 
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import Clientes from './Clientes.jsx'
-import Hospitales from './Hospitales.jsx'
+import Personas from './Personas.jsx'
 import Empresas from './Empresas.jsx'
 
-const TAB_INICIAL = { clientes: 'clientes', empresas: 'empresas', hospitales: 'hospitales' }
+const TABS = [
+  { v: 'clientes',    t: '🧑‍💼 Clientes',    tipo: 'cliente' },
+  { v: 'socios',      t: '🤝 Socios',        tipo: 'socio' },
+  { v: 'proveedores', t: '🚚 Proveedores',   tipo: 'proveedor' },
+  { v: 'empresas',    t: '🏢 Empresas' },
+]
 
 export default function Cartera() {
   const [params] = useSearchParams()
-  const [tab, setTab] = useState(TAB_INICIAL[params.get('t')] || 'clientes')
+  const inicial = TABS.some((x) => x.v === params.get('t')) ? params.get('t') : 'clientes'
+  const [tab, setTab] = useState(inicial)
+  const actual = TABS.find((x) => x.v === tab) || TABS[0]
 
   return (
     <>
       <h1 className="titulo-pagina">👥 Cartera</h1>
 
       <div className="subtabs">
-        <button
-          className={tab === 'clientes' ? 'subtab activo' : 'subtab'}
-          onClick={() => setTab('clientes')}
-        >🧑‍💼 Clientes</button>
-        <button
-          className={tab === 'hospitales' ? 'subtab activo' : 'subtab'}
-          onClick={() => setTab('hospitales')}
-        >🏥 Hospitales</button>
-        <button
-          className={tab === 'empresas' ? 'subtab activo' : 'subtab'}
-          onClick={() => setTab('empresas')}
-        >🤝 Socios</button>
+        {TABS.map((x) => (
+          <button key={x.v} className={tab === x.v ? 'subtab activo' : 'subtab'}
+            onClick={() => setTab(x.v)}>{x.t}</button>
+        ))}
       </div>
 
       <div className="pagina" key={tab}>
-        {tab === 'clientes' ? <Clientes /> : tab === 'hospitales' ? <Hospitales /> : <Empresas />}
+        {actual.tipo ? <Personas tipo={actual.tipo} /> : <Empresas />}
       </div>
     </>
   )

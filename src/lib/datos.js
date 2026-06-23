@@ -1,117 +1,11 @@
-// Capa de acceso a datos. Centraliza las llamadas a Supabase para que las
-// pantallas no hablen directamente con la base de datos.
-// Si se añade una tabla nueva, se replica este patrón.
+// Capa de acceso a datos. Centraliza las llamadas a Supabase.
+// Modelo: EMPRESAS (orgs tipadas) + PERSONAS (socio/cliente/proveedor) +
+// ENCARGOS (oportunidades, ligadas a una empresa, con personas y productos).
 
 import { supabase } from './supabase.js'
 
 // ---------------------------------------------------------------
-// HOSPITALES
-// ---------------------------------------------------------------
-
-export async function listarHospitales() {
-  const { data, error } = await supabase
-    .from('hospitales')
-    .select('*')
-    .order('nombre', { ascending: true })
-  if (error) throw error
-  return data
-}
-
-export async function crearHospital(hospital) {
-  const { data, error } = await supabase
-    .from('hospitales')
-    .insert(hospital)
-    .select()
-    .single()
-  if (error) throw error
-  return data
-}
-
-export async function borrarHospital(id) {
-  const { error } = await supabase.from('hospitales').delete().eq('id', id)
-  if (error) throw error
-}
-
-export async function obtenerHospital(id) {
-  const { data, error } = await supabase.from('hospitales').select('*').eq('id', id).single()
-  if (error) throw error
-  return data
-}
-
-// ---------------------------------------------------------------
-// SERVICIOS / ESPECIALIDADES (dentro de un hospital)
-// ---------------------------------------------------------------
-
-// Devuelve los servicios de un hospital con sus contactos embebidos.
-export async function listarServiciosConContactos(hospitalId) {
-  const { data, error } = await supabase
-    .from('servicios')
-    .select('*, contactos(*)')
-    .eq('hospital_id', hospitalId)
-    .order('nombre', { ascending: true })
-  if (error) throw error
-  return data
-}
-
-export async function crearServicio(servicio) {
-  const { data, error } = await supabase.from('servicios').insert(servicio).select().single()
-  if (error) throw error
-  return data
-}
-
-export async function borrarServicio(id) {
-  const { error } = await supabase.from('servicios').delete().eq('id', id)
-  if (error) throw error
-}
-
-// ---------------------------------------------------------------
-// CONTACTOS / PERSONAS
-// ---------------------------------------------------------------
-
-export async function crearContacto(contacto) {
-  const { data, error } = await supabase.from('contactos').insert(contacto).select().single()
-  if (error) throw error
-  return data
-}
-
-export async function borrarContacto(id) {
-  const { error } = await supabase.from('contactos').delete().eq('id', id)
-  if (error) throw error
-}
-
-// ---------------------------------------------------------------
-// CLIENTES (personas/entidades cliente, distintas de los hospitales)
-// ---------------------------------------------------------------
-
-export async function listarClientes() {
-  const { data, error } = await supabase
-    .from('clientes')
-    .select('*')
-    .order('nombre', { ascending: true })
-  if (error) throw error
-  return data
-}
-
-export async function crearCliente(cliente) {
-  const { data, error } = await supabase.from('clientes').insert(cliente).select().single()
-  if (error) throw error
-  return data
-}
-
-export async function actualizarCliente(id, cambios) {
-  const { data, error } = await supabase
-    .from('clientes').update(cambios).eq('id', id).select().single()
-  if (error) throw error
-  return data
-}
-
-export async function borrarCliente(id) {
-  const { error } = await supabase.from('clientes').delete().eq('id', id)
-  if (error) throw error
-}
-
-// ---------------------------------------------------------------
-// EMPRESAS / PROVEEDORES
+// EMPRESAS (organizaciones: hospital, clínica, fábrica, proveedor, otro)
 // ---------------------------------------------------------------
 
 export async function listarEmpresas() {
@@ -123,8 +17,21 @@ export async function listarEmpresas() {
   return data
 }
 
+export async function obtenerEmpresa(id) {
+  const { data, error } = await supabase.from('empresas').select('*').eq('id', id).single()
+  if (error) throw error
+  return data
+}
+
 export async function crearEmpresa(empresa) {
   const { data, error } = await supabase.from('empresas').insert(empresa).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function actualizarEmpresa(id, cambios) {
+  const { data, error } = await supabase
+    .from('empresas').update(cambios).eq('id', id).select().single()
   if (error) throw error
   return data
 }
@@ -135,14 +42,47 @@ export async function borrarEmpresa(id) {
 }
 
 // ---------------------------------------------------------------
-// ENCARGOS
+// PERSONAS (socios / clientes / proveedores — mismos campos)
+// ---------------------------------------------------------------
+
+// Lista las personas de un tipo (socio/cliente/proveedor) con su empresa.
+export async function listarPersonas(tipo) {
+  let q = supabase
+    .from('personas')
+    .select('*, empresas(nombre, tipo)')
+    .order('nombre', { ascending: true })
+  if (tipo) q = q.eq('tipo', tipo)
+  const { data, error } = await q
+  if (error) throw error
+  return data
+}
+
+export async function crearPersona(persona) {
+  const { data, error } = await supabase.from('personas').insert(persona).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function actualizarPersona(id, cambios) {
+  const { data, error } = await supabase
+    .from('personas').update(cambios).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function borrarPersona(id) {
+  const { error } = await supabase.from('personas').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ---------------------------------------------------------------
+// ENCARGOS = OPORTUNIDADES (ligadas a una empresa)
 // ---------------------------------------------------------------
 
 export async function listarEncargos() {
-  // Embebemos el nombre del hospital relacionado para mostrarlo en la lista.
   const { data, error } = await supabase
     .from('encargos')
-    .select('*, hospitales(nombre)')
+    .select('*, empresas(nombre, tipo)')
     .order('creado_en', { ascending: false })
   if (error) throw error
   return data
@@ -156,11 +96,7 @@ export async function crearEncargo(encargo) {
 
 export async function actualizarEncargo(id, cambios) {
   const { data, error } = await supabase
-    .from('encargos')
-    .update(cambios)
-    .eq('id', id)
-    .select()
-    .single()
+    .from('encargos').update(cambios).eq('id', id).select().single()
   if (error) throw error
   return data
 }
@@ -173,87 +109,9 @@ export async function borrarEncargo(id) {
 export async function obtenerEncargo(id) {
   const { data, error } = await supabase
     .from('encargos')
-    .select('*, hospitales(nombre), servicios(nombre), contactos(nombre, apellidos)')
+    .select('*, empresas(nombre, tipo)')
     .eq('id', id)
     .single()
-  if (error) throw error
-  return data
-}
-
-// ---------------------------------------------------------------
-// OFERTAS (presupuestos de proveedores dentro de un encargo)
-// ---------------------------------------------------------------
-
-export async function listarOfertasDeEncargo(encargoId) {
-  const { data, error } = await supabase
-    .from('ofertas')
-    .select('*, empresas(nombre)')
-    .eq('encargo_id', encargoId)
-    .order('precio', { ascending: true })
-  if (error) throw error
-  return data
-}
-
-export async function crearOferta(oferta) {
-  const { data, error } = await supabase.from('ofertas').insert(oferta).select().single()
-  if (error) throw error
-  return data
-}
-
-export async function borrarOferta(id) {
-  const { error } = await supabase.from('ofertas').delete().eq('id', id)
-  if (error) throw error
-}
-
-// ---------------------------------------------------------------
-// NOTAS de un encargo (historial de seguimiento con fecha)
-// ---------------------------------------------------------------
-
-export async function listarNotasDeEncargo(encargoId) {
-  const { data, error } = await supabase
-    .from('notas')
-    .select('*')
-    .eq('encargo_id', encargoId)
-    .order('creado_en', { ascending: false })
-  if (error) throw error
-  return data
-}
-
-export async function crearNota(nota) {
-  const { data, error } = await supabase.from('notas').insert(nota).select().single()
-  if (error) throw error
-  return data
-}
-
-export async function borrarNota(id) {
-  const { error } = await supabase.from('notas').delete().eq('id', id)
-  if (error) throw error
-}
-
-// ---------------------------------------------------------------
-// NOTAS / RECORDATORIOS (para calendario y tareas del día)
-// ---------------------------------------------------------------
-
-export async function listarRecordatorios() {
-  const { data, error } = await supabase
-    .from('notas')
-    .select('id, texto, recordatorio, encargos(producto, descripcion)')
-    .not('recordatorio', 'is', null)
-    .order('recordatorio', { ascending: true })
-  if (error) throw error
-  return data
-}
-
-// ---------------------------------------------------------------
-// CONTACTOS (listados para selección en oportunidades)
-// ---------------------------------------------------------------
-
-export async function listarContactosDeHospital(hospitalId) {
-  const { data, error } = await supabase
-    .from('contactos')
-    .select('id, nombre, apellidos, cargo, servicios(nombre)')
-    .eq('hospital_id', hospitalId)
-    .order('nombre', { ascending: true })
   if (error) throw error
   return data
 }
@@ -264,9 +122,7 @@ export async function listarContactosDeHospital(hospitalId) {
 
 export async function listarProductos() {
   const { data, error } = await supabase
-    .from('productos')
-    .select('*')
-    .order('nombre', { ascending: true })
+    .from('productos').select('*').order('nombre', { ascending: true })
   if (error) throw error
   return data
 }
@@ -323,31 +179,89 @@ export async function quitarProductoDeOportunidad(id) {
 }
 
 // ---------------------------------------------------------------
-// CONTACTOS INVOLUCRADOS EN UNA OPORTUNIDAD
+// PERSONAS INVOLUCRADAS EN UNA OPORTUNIDAD
 // ---------------------------------------------------------------
 
-export async function listarContactosDeOportunidad(encargoId) {
+export async function listarPersonasDeOportunidad(encargoId) {
   const { data, error } = await supabase
-    .from('oportunidad_contactos')
-    .select('id, contacto_id, contactos(nombre, apellidos, cargo, movil, telefonos, email)')
+    .from('oportunidad_personas')
+    .select('id, persona_id, personas(nombre, tipo, cargo, telefonos, correo, empresas(nombre))')
     .eq('encargo_id', encargoId)
     .order('creado_en', { ascending: true })
   if (error) throw error
   return data
 }
 
-export async function añadirContactoAOportunidad(encargoId, contactoId) {
+export async function añadirPersonaAOportunidad(encargoId, personaId) {
   const { data, error } = await supabase
-    .from('oportunidad_contactos')
-    .insert({ encargo_id: encargoId, contacto_id: contactoId })
+    .from('oportunidad_personas')
+    .insert({ encargo_id: encargoId, persona_id: personaId })
     .select().single()
   if (error) throw error
   return data
 }
 
-export async function quitarContactoDeOportunidad(id) {
-  const { error } = await supabase.from('oportunidad_contactos').delete().eq('id', id)
+export async function quitarPersonaDeOportunidad(id) {
+  const { error } = await supabase.from('oportunidad_personas').delete().eq('id', id)
   if (error) throw error
+}
+
+// ---------------------------------------------------------------
+// OFERTAS (presupuestos de proveedores dentro de una oportunidad)
+// ---------------------------------------------------------------
+
+export async function listarOfertasDeEncargo(encargoId) {
+  const { data, error } = await supabase
+    .from('ofertas')
+    .select('*, empresas(nombre)')
+    .eq('encargo_id', encargoId)
+    .order('precio', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function crearOferta(oferta) {
+  const { data, error } = await supabase.from('ofertas').insert(oferta).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function borrarOferta(id) {
+  const { error } = await supabase.from('ofertas').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ---------------------------------------------------------------
+// NOTAS de una oportunidad (seguimiento con recordatorios)
+// ---------------------------------------------------------------
+
+export async function listarNotasDeEncargo(encargoId) {
+  const { data, error } = await supabase
+    .from('notas').select('*').eq('encargo_id', encargoId)
+    .order('creado_en', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export async function crearNota(nota) {
+  const { data, error } = await supabase.from('notas').insert(nota).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function borrarNota(id) {
+  const { error } = await supabase.from('notas').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function listarRecordatorios() {
+  const { data, error } = await supabase
+    .from('notas')
+    .select('id, texto, recordatorio, encargos(producto, descripcion)')
+    .not('recordatorio', 'is', null)
+    .order('recordatorio', { ascending: true })
+  if (error) throw error
+  return data
 }
 
 // ---------------------------------------------------------------
@@ -362,9 +276,7 @@ export async function obtenerAjustes() {
 
 export async function actualizarAjustes(cambios) {
   const { data, error } = await supabase
-    .from('ajustes')
-    .upsert({ id: 1, ...cambios })
-    .select().single()
+    .from('ajustes').upsert({ id: 1, ...cambios }).select().single()
   if (error) throw error
   return data
 }

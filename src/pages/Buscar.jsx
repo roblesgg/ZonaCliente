@@ -1,28 +1,29 @@
-// Buscador global: encuentra al instante un encargo, un hospital o una empresa.
-// Carga los datos una vez y filtra en el móvil sin esperar al servidor.
+// Buscador global: encuentra al instante una oportunidad, una empresa o una
+// persona (cliente/socio/proveedor). Carga los datos una vez y filtra en local.
 
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabaseConfigurado } from '../lib/supabase.js'
-import { listarEncargos, listarHospitales, listarEmpresas } from '../lib/datos.js'
+import { listarEncargos, listarEmpresas, listarPersonas } from '../lib/datos.js'
 import { faseInfo } from '../lib/fases.js'
+import { TIPOS_PERSONA, etiquetaTipoEmpresa } from '../lib/constantes.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
 const norm = (s) => (s || '').toString().toLowerCase()
 
 export default function Buscar() {
   const [texto, setTexto] = useState('')
-  const [datos, setDatos] = useState({ encargos: [], hospitales: [], empresas: [] })
+  const [datos, setDatos] = useState({ encargos: [], empresas: [], personas: [] })
   const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
     if (!supabaseConfigurado) { setCargando(false); return }
     ;(async () => {
       try {
-        const [encargos, hospitales, empresas] = await Promise.all([
-          listarEncargos(), listarHospitales(), listarEmpresas(),
+        const [encargos, empresas, personas] = await Promise.all([
+          listarEncargos(), listarEmpresas(), listarPersonas(),
         ])
-        setDatos({ encargos, hospitales, empresas })
+        setDatos({ encargos, empresas, personas })
       } catch (e) {
         console.error(e)
       } finally {
@@ -38,23 +39,22 @@ export default function Buscar() {
     const encargos = datos.encargos.filter((e) =>
       norm(e.producto).includes(q) ||
       norm(e.descripcion).includes(q) ||
-      norm(e.caracteristicas).includes(q) ||
-      norm(e.hospitales?.nombre).includes(q))
-    const hospitales = datos.hospitales.filter((h) =>
-      norm(h.nombre).includes(q) ||
-      norm(h.ciudad).includes(q) ||
-      norm(h.provincia).includes(q))
+      norm(e.empresas?.nombre).includes(q))
     const empresas = datos.empresas.filter((em) =>
       norm(em.nombre).includes(q) ||
       norm(em.ciudad).includes(q) ||
-      norm(em.productos).includes(q) ||
-      norm(em.responsable).includes(q))
-    return { encargos, hospitales, empresas }
+      norm(em.provincia).includes(q) ||
+      norm(etiquetaTipoEmpresa(em.tipo)).includes(q))
+    const personas = datos.personas.filter((p) =>
+      norm(p.nombre).includes(q) ||
+      norm(p.cargo).includes(q) ||
+      norm(p.empresas?.nombre).includes(q))
+    return { encargos, empresas, personas }
   }, [q, datos])
 
   if (!supabaseConfigurado) return <SinConfigurar titulo="🔍 Buscar" />
 
-  const total = res ? res.encargos.length + res.hospitales.length + res.empresas.length : 0
+  const total = res ? res.encargos.length + res.empresas.length + res.personas.length : 0
 
   return (
     <>
@@ -65,7 +65,7 @@ export default function Buscar() {
         className="buscador-grande"
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
-        placeholder="Oportunidad, hospital, socio, ciudad…"
+        placeholder="Oportunidad, empresa, persona, ciudad…"
         autoFocus
       />
 
@@ -74,7 +74,7 @@ export default function Buscar() {
       ) : !res ? (
         <p className="placeholder" style={{ marginTop: '1.5rem' }}>
           Escribe (o dicta con el micrófono del teclado) para buscar entre tus oportunidades,
-          hospitales y socios.
+          empresas y personas.
         </p>
       ) : total === 0 ? (
         <p className="placeholder" style={{ marginTop: '1.5rem' }}>Sin resultados para “{texto}”.</p>
@@ -90,7 +90,7 @@ export default function Buscar() {
                     <Link key={e.id} to={`/encargos/${e.id}`} className="tarjeta res-item">
                       <div>
                         <strong>{e.producto}</strong>
-                        <p className="placeholder" style={{ margin: 0 }}>{e.hospitales?.nombre || 'Sin hospital'}</p>
+                        <p className="placeholder" style={{ margin: 0 }}>{e.empresas?.nombre || 'Sin empresa'}</p>
                       </div>
                       <span className="badge" style={{ background: f.c, color: f.tx }}>{f.t}</span>
                     </Link>
@@ -100,16 +100,16 @@ export default function Buscar() {
             </section>
           )}
 
-          {res.hospitales.length > 0 && (
+          {res.empresas.length > 0 && (
             <section>
-              <h3 className="res-grupo">🏥 Hospitales ({res.hospitales.length})</h3>
+              <h3 className="res-grupo">🏢 Empresas ({res.empresas.length})</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {res.hospitales.map((h) => (
-                  <Link key={h.id} to={`/hospitales/${h.id}`} className="tarjeta res-item">
+                {res.empresas.map((em) => (
+                  <Link key={em.id} to="/cartera?t=empresas" className="tarjeta res-item">
                     <div>
-                      <strong>{h.nombre}</strong>
+                      <strong>{em.nombre}</strong>
                       <p className="placeholder" style={{ margin: 0 }}>
-                        {[h.ciudad, h.provincia].filter(Boolean).join(' · ') || 'Sin ubicación'}
+                        {[etiquetaTipoEmpresa(em.tipo), em.ciudad].filter(Boolean).join(' · ') || 'Empresa'}
                       </p>
                     </div>
                     <span className="res-flecha">›</span>
@@ -119,21 +119,26 @@ export default function Buscar() {
             </section>
           )}
 
-          {res.empresas.length > 0 && (
+          {res.personas.length > 0 && (
             <section>
-              <h3 className="res-grupo">🤝 Socios ({res.empresas.length})</h3>
+              <h3 className="res-grupo">👤 Personas ({res.personas.length})</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {res.empresas.map((em) => (
-                  <Link key={em.id} to="/cartera?t=empresas" className="tarjeta res-item">
-                    <div>
-                      <strong>{em.nombre}</strong>
-                      <p className="placeholder" style={{ margin: 0 }}>
-                        {[em.ciudad, em.productos].filter(Boolean).join(' · ') || 'Empresa'}
-                      </p>
-                    </div>
-                    <span className="res-flecha">›</span>
-                  </Link>
-                ))}
+                {res.personas.map((p) => {
+                  const meta = TIPOS_PERSONA[p.tipo]
+                  const destino = p.tipo === 'cliente' ? '/cartera?t=clientes'
+                    : p.tipo === 'socio' ? '/cartera?t=socios' : '/cartera?t=proveedores'
+                  return (
+                    <Link key={p.id} to={destino} className="tarjeta res-item">
+                      <div>
+                        <strong>{meta ? `${meta.icono} ` : ''}{p.nombre}</strong>
+                        <p className="placeholder" style={{ margin: 0 }}>
+                          {[p.cargo, p.empresas?.nombre].filter(Boolean).join(' · ') || (meta ? meta.t : 'Persona')}
+                        </p>
+                      </div>
+                      <span className="res-flecha">›</span>
+                    </Link>
+                  )
+                })}
               </div>
             </section>
           )}
