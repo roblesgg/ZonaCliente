@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Zona Cliente | El CRM para tu equipo comercial</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/swirl.png" />
     <meta
       name="description"
       content="Gestiona hospitales, empresas, contactos y encargos desde el ordenador o el móvil. Calendario, fases de venta y beneficio potencial, siempre sincronizado."
@@ -104,6 +106,8 @@
       .hero-grid {
         display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center;
       }
+      /* Los hijos del grid pueden encogerse (si no, el mockup ancho desborda en móvil). */
+      .hero-grid > * { min-width: 0; }
       .pill {
         display: inline-flex; align-items: center; gap: 8px;
         background: var(--azul-claro); color: var(--azul);
@@ -138,7 +142,7 @@
       .ventana {
         background: var(--blanco); border: 1px solid var(--borde); border-radius: 18px;
         box-shadow: var(--sombra-lg); overflow: hidden; transform: perspective(1600px) rotateY(-9deg) rotateX(3deg);
-        transition: transform .6s cubic-bezier(.2,0,0,1);
+        transition: transform .6s cubic-bezier(.2,0,0,1); min-width: 0;
       }
       .ventana:hover { transform: perspective(1600px) rotateY(-3deg) rotateX(1deg) translateY(-6px); }
       .ventana-barra { display: flex; align-items: center; gap: 7px; padding: 12px 14px; border-bottom: 1px solid var(--borde); background: #fcfdff; }
@@ -147,11 +151,11 @@
         margin-left: 10px; font-size: 0.72rem; color: var(--suave); background: var(--fondo);
         border: 1px solid var(--borde); border-radius: 8px; padding: 4px 12px; flex: 1;
       }
-      .ventana-cuerpo { display: grid; grid-template-columns: 64px 1fr; min-height: 360px; }
+      .ventana-cuerpo { display: grid; grid-template-columns: 64px minmax(0, 1fr); min-height: 360px; }
       .mini-side { border-right: 1px solid var(--borde); padding: 14px 0; display: flex; flex-direction: column; align-items: center; gap: 6px; background: #fcfdff; }
       .mini-side span { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; font-size: 1.05rem; }
       .mini-side span.on { background: var(--azul-claro); }
-      .mini-main { padding: 16px; }
+      .mini-main { padding: 16px; min-width: 0; }
       .mini-h { font-weight: 800; font-size: 1.05rem; margin-bottom: 12px; }
       .mini-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
       .mini-card { border: 1px solid var(--borde); border-radius: 12px; padding: 12px; box-shadow: var(--sombra); }
@@ -169,7 +173,7 @@
       .mini-card.ancho { grid-column: 1 / -1; }
 
       /* Mini pipeline (kanban) del mockup */
-      .mini-kanban { display: flex; gap: 8px; }
+      .mini-kanban { display: flex; gap: 8px; overflow-x: auto; }
       .mk-col { flex: 1; min-width: 0; background: #f1f5f9; border-radius: 10px; padding: 8px 7px; }
       .mk-cab { display: flex; align-items: center; gap: 5px; font-size: 0.62rem; font-weight: 800; color: #475569; margin-bottom: 8px; }
       .mk-cab b { margin-left: auto; background: #fff; border: 1px solid var(--borde); border-radius: 999px; padding: 0 6px; font-size: 0.58rem; color: var(--suave); }
@@ -257,7 +261,7 @@
       .reveal.on { opacity: 1; transform: none; }
 
       @media (max-width: 900px) {
-        .hero-grid, .cal-wrap, .multi { grid-template-columns: 1fr; }
+        .hero-grid { grid-template-columns: minmax(0, 1fr); }
         .hero { padding: 48px 0 20px; }
         .ventana { transform: none; margin-top: 8px; }
         .ventana:hover { transform: translateY(-4px); }
