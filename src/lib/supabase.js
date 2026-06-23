@@ -14,4 +14,7 @@ if (!supabaseConfigurado) {
   )
 }
 
-export const supabase = createClient(url ?? '', anonKey ?? '')
+// Solo creamos el cliente si hay credenciales. Si faltan, exportamos null y la
+// interfaz muestra el aviso de "Falta configurar Supabase" en vez de quedarse
+// en blanco (createClient con URL vacía lanzaría un error al cargar el módulo).
+export const supabase = supabaseConfigurado ? createClient(url, anonKey) : null
