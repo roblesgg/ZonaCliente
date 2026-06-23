@@ -8,13 +8,10 @@
 //   color -> color sólido para gráficos y puntos
 
 export const FASES = [
-  { v: 'deteccion',    t: 'Detección',    tLargo: 'Detección de necesidad',  c: '#e0e7ff', tx: '#4338ca', color: '#4338ca' },
-  { v: 'ofertas',      t: 'Ofertas',      tLargo: 'Petición de ofertas',     c: '#fef3c7', tx: '#b45309', color: '#b45309' },
-  { v: 'comparativa',  t: 'Comparativa',  tLargo: 'Comparativa y propuesta', c: '#cffafe', tx: '#0e7490', color: '#0e7490' },
-  { v: 'demostracion', t: 'Demostración', tLargo: 'Demostración / prueba',   c: '#fae8ff', tx: '#a21caf', color: '#a21caf' },
-  { v: 'compra',       t: 'Propuesta',    tLargo: 'Propuesta de compra',     c: '#dcfce7', tx: '#15803d', color: '#15803d' },
-  { v: 'ganado',       t: 'Ganado',       tLargo: 'Ganado',                  c: '#bbf7d0', tx: '#166534', color: '#166534' },
-  { v: 'perdido',      t: 'Perdido',      tLargo: 'Perdido',                 c: '#fecaca', tx: '#991b1b', color: '#991b1b' },
+  { v: 'oportunidad', t: 'Oportunidad', tLargo: 'Oportunidad', c: '#e0e7ff', tx: '#4338ca', color: '#4338ca' },
+  { v: 'oferta',      t: 'Oferta',      tLargo: 'Oferta',      c: '#fef3c7', tx: '#b45309', color: '#b45309' },
+  { v: 'ganado',      t: 'Ganado',      tLargo: 'Ganado',      c: '#bbf7d0', tx: '#166534', color: '#166534' },
+  { v: 'perdido',     t: 'Perdido',     tLargo: 'Perdido',     c: '#fecaca', tx: '#991b1b', color: '#991b1b' },
 ]
 
 // Fases "abiertas" (en curso): todas menos las de cierre.

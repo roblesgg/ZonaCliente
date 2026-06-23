@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabaseConfigurado } from '../lib/supabase.js'
 import {
-  listarEncargos, crearEncargo, actualizarEncargo, borrarEncargo, listarEmpresas,
+  listarEncargos, crearEncargo, actualizarEncargo, borrarEncargo, listarEmpresas, crearNota,
 } from '../lib/datos.js'
 import { FASES, indiceFase } from '../lib/fases.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
@@ -14,7 +14,7 @@ import SelectorEmpresa from '../components/SelectorEmpresa.jsx'
 import { CampoMoneda, CampoPorcentaje } from '../components/CamposNumero.jsx'
 
 const FORM_VACIO = {
-  producto: '', empresa_id: '', fase: 'deteccion', fecha_limite: '', ingresos_totales: '', comision_porcentaje: '',
+  producto: '', empresa_id: '', fase: 'oportunidad', fecha_limite: '', ingresos_totales: '', comision_porcentaje: '',
 }
 
 const eur = (n) => Number(n || 0).toLocaleString('es-ES')
@@ -84,6 +84,7 @@ export default function Ventas() {
     setEncargos((prev) => prev.map((e) => (e.id === encargo.id ? { ...e, fase: destino.v } : e)))
     try {
       await actualizarEncargo(encargo.id, { fase: destino.v })
+      await crearNota({ encargo_id: encargo.id, tipo: 'estado', texto: `Pasó a "${destino.tLargo}"` })
     } catch (e) {
       setError(e.message)
       await cargar()

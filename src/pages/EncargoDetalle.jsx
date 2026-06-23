@@ -13,10 +13,11 @@ import {
   listarProductos, crearProducto,
   listarProductosDeOportunidad, añadirProductoAOportunidad, actualizarLineaProducto, quitarProductoDeOportunidad,
   listarPersonas, listarPersonasDeOportunidad, añadirPersonaAOportunidad, quitarPersonaDeOportunidad,
-  actualizarDescripcionInvolucrado,
+  actualizarDescripcionInvolucrado, listarRecordatorios,
 } from '../lib/datos.js'
+import { sincronizarRecordatorios } from '../lib/notificaciones.js'
 import { FASES, faseInfo } from '../lib/fases.js'
-import { TIPOS_PERSONA } from '../lib/constantes.js'
+import { TIPOS_PERSONA, AVISOS, TIPOS_ACTIVIDAD } from '../lib/constantes.js'
 import CamposExtra from '../components/CamposExtra.jsx'
 import SelectorEmpresa from '../components/SelectorEmpresa.jsx'
 import { CampoMoneda, CampoPorcentaje } from '../components/CamposNumero.jsx'
@@ -38,7 +39,7 @@ export default function EncargoDetalle() {
   const [error, setError] = useState(null)
 
   // Edición de datos principales
-  const [datos, setDatos] = useState({ producto: '', empresa_id: '', descripcion: '', fase: 'deteccion', ingresos_totales: '', comision_porcentaje: '', comision_esperada: '', extra: {} })
+  const [datos, setDatos] = useState({ producto: '', empresa_id: '', descripcion: '', fase: 'oportunidad', ingresos_totales: '', comision_porcentaje: '', comision_esperada: '', extra: {} })
   const [guardando, setGuardando] = useState(false)
   const [guardado, setGuardado] = useState(false)
 
@@ -48,7 +49,12 @@ export default function EncargoDetalle() {
   const [sel, setSel] = useState({})       // persona seleccionada por tipo
   const [descr, setDescr] = useState({})   // descripción en edición por involucrado
   const [oferta, setOferta] = useState({ empresa_id: '', precio: '', notas: '' })
-  const [nota, setNota] = useState({ texto: '', recordatorio: '' })
+  const [nota, setNota] = useState({ tipo: 'nota', texto: '', recordatorio: '', recordatorio_hora: '', aviso_min: 0 })
+
+  // Reprograma los avisos del móvil tras tocar recordatorios.
+  async function reprogramarAvisos() {
+    try { sincronizarRecordatorios(await listarRecordatorios()) } catch { /* ignorar */ }
+  }
 
   async function cargar() {
     setCargando(true); setError(null)
@@ -62,7 +68,7 @@ export default function EncargoDetalle() {
       setOfertas(ofs); setNotas(nts); setEmpresas(emps); setCatalogo(cat); setPersonas(pers)
       setDatos({
         producto: enc.producto || '', empresa_id: enc.empresa_id || '',
-        descripcion: enc.descripcion || '', fase: enc.fase || 'deteccion',
+        descripcion: enc.descripcion || '', fase: enc.fase || 'oportunidad',
         ingresos_totales: enc.ingresos_totales ?? '',
         comision_porcentaje: enc.comision_porcentaje ?? '', comision_esperada: enc.comision_esperada ?? '',
         extra: enc.extra || {},
@@ -108,6 +114,10 @@ export default function EncargoDetalle() {
         comision_esperada: datos.comision_esperada === '' ? null : Number(datos.comision_esperada),
         extra: datos.extra || {},
       })
+      // Si cambió el estado, lo deja registrado en el historial.
+      if (encargo.fase !== datos.fase) {
+        await crearNota({ encargo_id: id, tipo: 'estado', texto: `Pasó a "${faseInfo(datos.fase).tLargo}"` })
+      }
       setGuardado(true)
       await cargar()
     } catch (e) { setError(e.message) }
@@ -174,9 +184,17 @@ export default function EncargoDetalle() {
     e.preventDefault()
     if (!nota.texto.trim()) return
     try {
-      await crearNota({ encargo_id: id, texto: nota.texto, recordatorio: nota.recordatorio || null })
-      setNota({ texto: '', recordatorio: '' })
+      await crearNota({
+        encargo_id: id,
+        tipo: nota.tipo || 'nota',
+        texto: nota.texto,
+        recordatorio: nota.recordatorio || null,
+        recordatorio_hora: nota.recordatorio ? (nota.recordatorio_hora || null) : null,
+        aviso_min: nota.recordatorio ? Number(nota.aviso_min) || 0 : 0,
+      })
+      setNota({ tipo: 'nota', texto: '', recordatorio: '', recordatorio_hora: '', aviso_min: 0 })
       await cargar()
+      reprogramarAvisos()
     } catch (e) { setError(e.message) }
   }
 
@@ -403,36 +421,61 @@ export default function EncargoDetalle() {
         </form>
       </section>
 
-      {/* Notas de seguimiento */}
+      {/* Historial de actividad (apuntes, correos, llamadas, cambios de estado) */}
       <section className="tarjeta" style={{ marginTop: '1rem' }}>
-        <h3>🗒️ Seguimiento</h3>
+        <h3>🗒️ Actividad</h3>
         <form onSubmit={añadirNota} style={{ marginBottom: '1rem' }}>
-          <textarea className="campo" rows={2} placeholder="Escribe una nota (ej. llamé y no contestan)…"
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+            {['nota', 'correo', 'llamada'].map((t) => (
+              <button type="button" key={t}
+                className={nota.tipo === t ? 'btn-primario' : 'btn-sec-claro'}
+                onClick={() => setNota({ ...nota, tipo: t })}>
+                {TIPOS_ACTIVIDAD[t].icono} {TIPOS_ACTIVIDAD[t].t}
+              </button>
+            ))}
+          </div>
+          <textarea className="campo" rows={2}
+            placeholder={nota.tipo === 'correo' ? 'Resumen del correo enviado…' : nota.tipo === 'llamada' ? 'Resumen de la llamada…' : 'Escribe un apunte…'}
             value={nota.texto} onChange={(e) => setNota({ ...nota, texto: e.target.value })} />
+
+          {/* Recordatorio con fecha, hora y antelación del aviso */}
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-            <label className="placeholder" style={{ fontSize: '0.85rem' }}>Recordatorio / fecha límite:</label>
+            <label className="placeholder" style={{ fontSize: '0.85rem' }}>🔔 Recordatorio:</label>
             <input className="campo" type="date" style={{ width: 'auto' }}
               value={nota.recordatorio} onChange={(e) => setNota({ ...nota, recordatorio: e.target.value })} />
-            <button className="btn-primario" type="submit">+ Añadir nota</button>
+            <input className="campo" type="time" style={{ width: 'auto' }} disabled={!nota.recordatorio}
+              value={nota.recordatorio_hora} onChange={(e) => setNota({ ...nota, recordatorio_hora: e.target.value })} />
+            <select className="campo" style={{ width: 'auto' }} disabled={!nota.recordatorio}
+              value={nota.aviso_min} onChange={(e) => setNota({ ...nota, aviso_min: Number(e.target.value) })}>
+              {AVISOS.map((a) => <option key={a.v} value={a.v}>{a.t}</option>)}
+            </select>
           </div>
+          <button className="btn-primario" type="submit" style={{ marginTop: '0.6rem' }}>+ Añadir</button>
         </form>
 
         {notas.length === 0 ? (
-          <p className="placeholder">Sin notas todavía.</p>
+          <p className="placeholder">Sin actividad todavía.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            {notas.map((n) => (
-              <div key={n.id} style={{ borderLeft: '3px solid var(--azul)', paddingLeft: '0.7rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>{n.texto}</span>
-                  <button className="btn-icono" onClick={async () => { await borrarNota(n.id); cargar() }} title="Borrar">🗑️</button>
+            {notas.map((n) => {
+              const act = TIPOS_ACTIVIDAD[n.tipo] || TIPOS_ACTIVIDAD.nota
+              return (
+                <div key={n.id} style={{ borderLeft: '3px solid var(--azul)', paddingLeft: '0.7rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
+                    <span><span title={act.t}>{act.icono}</span> {n.texto}</span>
+                    <button className="btn-icono" onClick={async () => { await borrarNota(n.id); cargar(); reprogramarAvisos() }} title="Borrar">🗑️</button>
+                  </div>
+                  <div className="placeholder" style={{ fontSize: '0.75rem' }}>
+                    {new Date(n.creado_en).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}
+                    {n.recordatorio && (
+                      <span className="badge" style={{ marginLeft: '0.5rem', background: '#fef3c7', color: 'var(--ambar)' }}>
+                        🔔 {n.recordatorio}{n.recordatorio_hora ? ` ${String(n.recordatorio_hora).slice(0, 5)}` : ''}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="placeholder" style={{ fontSize: '0.75rem' }}>
-                  {new Date(n.creado_en).toLocaleDateString('es-ES')}
-                  {n.recordatorio && <span className="badge" style={{ marginLeft: '0.5rem', background: '#fef3c7', color: 'var(--ambar)' }}>🔔 {n.recordatorio}</span>}
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </section>

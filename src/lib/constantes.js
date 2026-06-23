@@ -18,3 +18,23 @@ export const TIPOS_PERSONA = {
   socio:     { t: 'Socio',     plural: 'Socios',      icono: '🤝' },
   proveedor: { t: 'Proveedor', plural: 'Proveedores', icono: '🚚' },
 }
+
+// Antelación del aviso (minutos antes del recordatorio).
+export const AVISOS = [
+  { v: 0,     t: 'En el momento' },
+  { v: 15,    t: '15 min antes' },
+  { v: 30,    t: '30 min antes' },
+  { v: 60,    t: '1 hora antes' },
+  { v: 120,   t: '2 horas antes' },
+  { v: 300,   t: '5 horas antes' },
+  { v: 1440,  t: 'El día antes' },
+  { v: 10080, t: 'La semana antes' },
+]
+
+// Tipos de actividad del historial de la oportunidad (estilo Sales).
+export const TIPOS_ACTIVIDAD = {
+  nota:    { t: 'Nota',           icono: '📝' },
+  correo:  { t: 'Correo',         icono: '📧' },
+  llamada: { t: 'Llamada',        icono: '📞' },
+  estado:  { t: 'Cambio de estado', icono: '➡️' },
+}

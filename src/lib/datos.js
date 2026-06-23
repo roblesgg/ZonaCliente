@@ -263,7 +263,7 @@ export async function borrarNota(id) {
 export async function listarRecordatorios() {
   const { data, error } = await supabase
     .from('notas')
-    .select('id, texto, recordatorio, encargos(producto, descripcion)')
+    .select('id, texto, recordatorio, recordatorio_hora, aviso_min, encargos(producto, descripcion)')
     .not('recordatorio', 'is', null)
     .order('recordatorio', { ascending: true })
   if (error) throw error

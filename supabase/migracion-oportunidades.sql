@@ -88,7 +88,7 @@ create table encargos (
   id                uuid primary key default gen_random_uuid(),
   producto          text,            -- título de la oportunidad
   empresa_id        uuid references empresas(id) on delete set null,
-  fase                text not null default 'deteccion',
+  fase                text not null default 'oportunidad',
   descripcion         text,
   ingresos_totales    numeric(12,2),
   comision_porcentaje numeric(5,2),   -- % propio de esta oportunidad
@@ -137,11 +137,14 @@ create table ofertas (
 -- 8) NOTAS de seguimiento (con recordatorios / fechas límite)
 -- -------------------------------------------------------------
 create table notas (
-  id            uuid primary key default gen_random_uuid(),
-  encargo_id    uuid references encargos(id) on delete cascade,
-  texto         text not null,
-  recordatorio  date,
-  creado_en     timestamptz not null default now()
+  id                uuid primary key default gen_random_uuid(),
+  encargo_id        uuid references encargos(id) on delete cascade,
+  tipo              text not null default 'nota',   -- nota / correo / llamada / estado
+  texto             text not null,
+  recordatorio      date,                           -- día del recordatorio
+  recordatorio_hora time,                           -- hora (si no, 09:00)
+  aviso_min         integer not null default 0,     -- minutos antes para avisar
+  creado_en         timestamptz not null default now()
 );
 
 -- -------------------------------------------------------------

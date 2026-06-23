@@ -43,8 +43,12 @@ export async function sincronizarRecordatorios(recordatorios) {
     const aProgramar = []
     for (const r of recordatorios || []) {
       if (!r.recordatorio) continue
-      const at = new Date(`${r.recordatorio}T09:00:00`)
-      if (isNaN(at.getTime()) || at.getTime() <= ahora) continue
+      // Momento del recordatorio: fecha + hora (09:00 si no hay), menos la antelación.
+      const hora = (r.recordatorio_hora || '09:00').slice(0, 5)
+      const evento = new Date(`${r.recordatorio}T${hora}:00`)
+      if (isNaN(evento.getTime())) continue
+      const at = new Date(evento.getTime() - (Number(r.aviso_min) || 0) * 60000)
+      if (at.getTime() <= ahora) continue
       aProgramar.push({
         id: idDesde(r.id),
         title: r.encargos?.producto ? `Recordatorio · ${r.encargos.producto}` : 'Recordatorio',
