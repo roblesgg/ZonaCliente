@@ -36,7 +36,8 @@ create table if not exists clientes (
   nombre       text not null,
   cargo        text,
   email        text,
-  telefonos    text[] not null default '{}',
+  -- Teléfonos con nombre: array JSON de objetos { nombre, numero }
+  telefonos    jsonb not null default '[]'::jsonb,
   notas        text,
   extra        jsonb not null default '{}'::jsonb,
   creado_en    timestamptz not null default now()
@@ -87,9 +88,10 @@ alter table encargos alter column producto drop not null;
 -- -------------------------------------------------------------
 -- 6) Teléfonos múltiples (servicios y contactos)
 -- -------------------------------------------------------------
+-- Teléfonos con nombre: array JSON de objetos { nombre, numero }
 alter table servicios add column if not exists telefono  text;
-alter table servicios add column if not exists telefonos text[] not null default '{}';
-alter table contactos add column if not exists telefonos text[] not null default '{}';
+alter table servicios add column if not exists telefonos jsonb not null default '[]'::jsonb;
+alter table contactos add column if not exists telefonos jsonb not null default '[]'::jsonb;
 
 -- -------------------------------------------------------------
 -- 7) Campos PERSONALIZADOS (JSON) en todas las fichas

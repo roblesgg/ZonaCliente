@@ -7,7 +7,7 @@ import { listarClientes, crearCliente, borrarCliente } from '../lib/datos.js'
 import AccionesContacto from '../components/AccionesContacto.jsx'
 import CamposExtra from '../components/CamposExtra.jsx'
 
-const FORM_VACIO = { nombre: '', cargo: '', email: '', telefonos: [''], notas: '', extra: {} }
+const FORM_VACIO = { nombre: '', cargo: '', email: '', telefonos: [{ nombre: '', numero: '' }], notas: '', extra: {} }
 
 export default function Clientes() {
   const [clientes, setClientes] = useState([])
@@ -34,15 +34,15 @@ export default function Clientes() {
     else setCargando(false)
   }, [])
 
-  function setTelefono(i, v) {
+  function setTelefono(i, campo, v) {
     setForm((f) => {
       const tel = [...(f.telefonos || [])]
-      tel[i] = v
+      tel[i] = { ...tel[i], [campo]: v }
       return { ...f, telefonos: tel }
     })
   }
   function añadirTelefono() {
-    setForm((f) => ({ ...f, telefonos: [...(f.telefonos || []), ''] }))
+    setForm((f) => ({ ...f, telefonos: [...(f.telefonos || []), { nombre: '', numero: '' }] }))
   }
   function quitarTelefono(i) {
     setForm((f) => ({ ...f, telefonos: (f.telefonos || []).filter((_, j) => j !== i) }))
@@ -54,7 +54,9 @@ export default function Clientes() {
     setGuardando(true)
     setError(null)
     try {
-      const telefonos = (form.telefonos || []).map((t) => t.trim()).filter(Boolean)
+      const telefonos = (form.telefonos || [])
+        .map((t) => ({ nombre: (t.nombre || '').trim(), numero: (t.numero || '').trim() }))
+        .filter((t) => t.numero)
       await crearCliente({
         nombre: form.nombre.trim(),
         cargo: form.cargo || null,
@@ -112,13 +114,15 @@ export default function Clientes() {
               onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </div>
 
-          {/* Teléfonos: se pueden añadir varios */}
+          {/* Teléfonos con nombre: se pueden añadir varios */}
           <div style={{ marginTop: '0.6rem' }}>
             <label className="placeholder" style={{ fontSize: '0.8rem' }}>Teléfonos</label>
             {(form.telefonos || []).map((tel, i) => (
               <div key={i} style={{ display: 'flex', gap: '0.4rem', marginTop: '0.3rem' }}>
-                <input className="campo" placeholder={`Teléfono ${i + 1}`} value={tel}
-                  onChange={(e) => setTelefono(i, e.target.value)} style={{ flex: 1 }} />
+                <input className="campo" placeholder="Nombre (ej. Oficina)" value={tel.nombre}
+                  onChange={(e) => setTelefono(i, 'nombre', e.target.value)} style={{ flex: 1 }} />
+                <input className="campo" placeholder="Número" value={tel.numero}
+                  onChange={(e) => setTelefono(i, 'numero', e.target.value)} style={{ flex: 1 }} />
                 {form.telefonos.length > 1 && (
                   <button type="button" className="btn-icono" title="Quitar teléfono"
                     onClick={() => quitarTelefono(i)}>🗑️</button>

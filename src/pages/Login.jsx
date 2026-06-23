@@ -1,7 +1,6 @@
 // Pantalla de inicio de sesión. Permite entrar o (la primera vez) crear la cuenta.
 import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
-import DripFooter from '../components/DripFooter.jsx'
 
 export default function Login() {
   const [modo, setModo] = useState('entrar') // 'entrar' | 'crear'
@@ -72,7 +71,6 @@ export default function Login() {
         </p>
       </form>
       </div>
-      <DripFooter />
     </div>
   )
 }

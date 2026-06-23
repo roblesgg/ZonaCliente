@@ -17,7 +17,7 @@ const ROLES = [
   { v: 'usa', t: 'Usa el material' },
   { v: 'paga', t: 'Paga / tramita' },
 ]
-const CONTACTO_VACIO = { nombre: '', apellidos: '', cargo: '', telefonos: [''], email: '', roles: [], extra: {} }
+const CONTACTO_VACIO = { nombre: '', apellidos: '', cargo: '', telefonos: [{ nombre: '', numero: '' }], email: '', roles: [], extra: {} }
 const SERVICIO_VACIO = { nombre: '', telefono: '' }
 
 export default function HospitalDetalle() {
@@ -88,7 +88,9 @@ export default function HospitalDetalle() {
     e.preventDefault()
     if (!contacto.nombre.trim()) return
     try {
-      const telefonos = (contacto.telefonos || []).map((t) => t.trim()).filter(Boolean)
+      const telefonos = (contacto.telefonos || [])
+        .map((t) => ({ nombre: (t.nombre || '').trim(), numero: (t.numero || '').trim() }))
+        .filter((t) => t.numero)
       await crearContacto({
         hospital_id: id,
         servicio_id: servicioId,
@@ -106,15 +108,15 @@ export default function HospitalDetalle() {
     } catch (e) { setError(e.message) }
   }
 
-  function setTelefono(i, v) {
+  function setTelefono(i, campo, v) {
     setContacto((c) => {
       const tel = [...(c.telefonos || [])]
-      tel[i] = v
+      tel[i] = { ...tel[i], [campo]: v }
       return { ...c, telefonos: tel }
     })
   }
   function añadirTelefono() {
-    setContacto((c) => ({ ...c, telefonos: [...(c.telefonos || []), ''] }))
+    setContacto((c) => ({ ...c, telefonos: [...(c.telefonos || []), { nombre: '', numero: '' }] }))
   }
   function quitarTelefono(i) {
     setContacto((c) => ({ ...c, telefonos: (c.telefonos || []).filter((_, j) => j !== i) }))
@@ -218,13 +220,15 @@ export default function HospitalDetalle() {
                       onChange={(e) => setContacto({ ...contacto, email: e.target.value })} />
                   </div>
 
-                  {/* Teléfonos: se pueden añadir varios */}
+                  {/* Teléfonos con nombre: se pueden añadir varios */}
                   <div style={{ marginTop: '0.6rem' }}>
                     <label className="placeholder" style={{ fontSize: '0.8rem' }}>Teléfonos</label>
                     {(contacto.telefonos || []).map((tel, i) => (
                       <div key={i} style={{ display: 'flex', gap: '0.4rem', marginTop: '0.3rem' }}>
-                        <input className="campo" placeholder={`Teléfono ${i + 1}`} value={tel}
-                          onChange={(e) => setTelefono(i, e.target.value)} style={{ flex: 1 }} />
+                        <input className="campo" placeholder="Nombre (ej. Centralita)" value={tel.nombre}
+                          onChange={(e) => setTelefono(i, 'nombre', e.target.value)} style={{ flex: 1 }} />
+                        <input className="campo" placeholder="Número" value={tel.numero}
+                          onChange={(e) => setTelefono(i, 'numero', e.target.value)} style={{ flex: 1 }} />
                         {contacto.telefonos.length > 1 && (
                           <button type="button" className="btn-icono" title="Quitar teléfono"
                             onClick={() => quitarTelefono(i)}>🗑️</button>
