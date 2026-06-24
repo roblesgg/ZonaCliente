@@ -304,8 +304,8 @@ export default function EncargoDetalle() {
       <section className="tarjeta" style={{ marginTop: '1rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ margin: 0 }}>📝 Datos de la oportunidad</h3>
-          <span className="placeholder" style={{ fontSize: '0.78rem' }}>
-            {guardando ? 'Guardando…' : guardado ? '✓ Guardado' : ''}
+          <span className="placeholder" style={{ fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+            {guardando ? <><span className="spinner" /> Guardando…</> : guardado ? '✓ Guardado' : ''}
           </span>
         </div>
         <div className="campos" style={{ marginTop: '0.75rem' }}>

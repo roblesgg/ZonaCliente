@@ -29,7 +29,7 @@
   --alto-topbar: 58px;
   --alto-navbar: 64px;
 
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: var(--texto);
 }
 
@@ -678,6 +678,22 @@ a.kpis:hover .kpi {
   gap: 0.5rem;
 }
 
+/* ====== Spinner (girando al guardar) ====== */
+.spinner {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid var(--neu-dark);
+  border-top-color: var(--azul);
+  animation: girar 0.7s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
 .btn-icono {
   background: transparent;
   border: none;
@@ -699,10 +715,10 @@ a.kpis:hover .kpi {
 
 .campo {
   width: 100%;
-  padding: 0.7rem 0.95rem;
+  padding: 0.75rem 1rem;
   font-size: 1rem;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   outline: none;
   font-family: inherit;
   background-color: var(--fondo);
