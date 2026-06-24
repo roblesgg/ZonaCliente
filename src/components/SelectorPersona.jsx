@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import Modal from './Modal.jsx'
 import FormPersona from './FormPersona.jsx'
+import Desplegable from './Desplegable.jsx'
 import { TIPOS_PERSONA } from '../lib/constantes.js'
 
 export default function SelectorPersona({
@@ -11,20 +12,18 @@ export default function SelectorPersona({
 }) {
   const [abierto, setAbierto] = useState(false)
 
+  const opciones = personas.map((p) => {
+    const m = TIPOS_PERSONA[p.tipo]
+    return {
+      valor: p.id,
+      etiqueta: `${p.nombre}${p.empresas?.nombre ? ` — ${p.empresas.nombre}` : ''}${m ? ` (${m.t})` : ''}`,
+    }
+  })
+
   return (
     <div style={style}>
       <div style={{ display: 'flex', gap: '0.4rem' }}>
-        <select className="campo" value={value || ''} onChange={(e) => onChange(e.target.value)} style={{ flex: 1 }}>
-          <option value="">{placeholder}</option>
-          {personas.map((p) => {
-            const m = TIPOS_PERSONA[p.tipo]
-            return (
-              <option key={p.id} value={p.id}>
-                {p.nombre}{p.empresas?.nombre ? ` — ${p.empresas.nombre}` : ''}{m ? ` (${m.t})` : ''}
-              </option>
-            )
-          })}
-        </select>
+        <Desplegable style={{ flex: 1 }} placeholder={placeholder} value={value || ''} onChange={onChange} opciones={opciones} />
         <button type="button" className="btn-sec-claro" onClick={() => setAbierto(true)} title="Crear persona nueva">➕</button>
       </div>
 

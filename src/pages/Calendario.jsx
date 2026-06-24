@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { supabaseConfigurado } from '../lib/supabase.js'
 import { listarRecordatorios, listarTareasPendientes, listarEncargos, crearNota, borrarNota } from '../lib/datos.js'
 import { pedirPermisoNotificaciones, reprogramarTodo } from '../lib/notificaciones.js'
+import Desplegable from '../components/Desplegable.jsx'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
 const MESES = [
@@ -187,13 +188,9 @@ export default function Calendario() {
               <input className="campo" placeholder={`Apuntar algo el ${diaSelTexto}…`}
                 value={nuevoTexto} onChange={(e) => setNuevoTexto(e.target.value)} />
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-                <select className="campo" style={{ flex: 1, minWidth: 160 }}
-                  value={nuevoEncargoId} onChange={(e) => setNuevoEncargoId(e.target.value)}>
-                  <option value="">— Sin oportunidad —</option>
-                  {encargos.map((en) => (
-                    <option key={en.id} value={en.id}>{en.producto || 'Oportunidad'}{en.empresas?.nombre ? ` · ${en.empresas.nombre}` : ''}</option>
-                  ))}
-                </select>
+                <Desplegable style={{ flex: 1, minWidth: 160 }} value={nuevoEncargoId} onChange={setNuevoEncargoId}
+                  opciones={[{ valor: '', etiqueta: '— Sin oportunidad —' },
+                    ...encargos.map((en) => ({ valor: en.id, etiqueta: `${en.producto || 'Oportunidad'}${en.empresas?.nombre ? ` · ${en.empresas.nombre}` : ''}` }))]} />
                 <button className="btn-primario" type="submit" disabled={guardando}>
                   {guardando ? '…' : '+ Apuntar'}
                 </button>

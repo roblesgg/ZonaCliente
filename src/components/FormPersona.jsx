@@ -1,17 +1,22 @@
 import { useEffect, useState } from 'react'
-import { crearPersona, listarEmpresas } from '../lib/datos.js'
+import { crearPersona, actualizarPersona, listarEmpresas } from '../lib/datos.js'
 import { TIPOS_PERSONA } from '../lib/constantes.js'
 import SelectorEmpresa from './SelectorEmpresa.jsx'
+import Desplegable from './Desplegable.jsx'
 import CamposExtra from './CamposExtra.jsx'
 
-const vacio = (tipo) => ({
-  tipo, nombre: '', empresa_id: '', cargo: '', descripcion_cargo: '',
-  telefonos: [{ nombre: '', numero: '' }], correo: '', extra: {},
+const desde = (p, tipoInicial) => ({
+  tipo: p?.tipo || tipoInicial || 'cliente',
+  nombre: p?.nombre || '', empresa_id: p?.empresa_id || '',
+  cargo: p?.cargo || '', descripcion_cargo: p?.descripcion_cargo || '',
+  telefonos: p?.telefonos?.length ? p.telefonos.map((t) => ({ nombre: t.nombre || '', numero: t.numero || '' })) : [{ nombre: '', numero: '' }],
+  correo: p?.correo || '', extra: p?.extra || {},
 })
 
-// Formulario completo de persona (cliente / socio / proveedor) para el popup.
-export default function FormPersona({ tipoInicial = 'cliente', onGuardada, onCancelar }) {
-  const [form, setForm] = useState(() => vacio(tipoInicial))
+// Formulario de persona. Si recibe `inicial` (con id) edita; si no, crea.
+export default function FormPersona({ inicial, tipoInicial = 'cliente', onGuardada, onCancelar }) {
+  const editar = !!inicial?.id
+  const [form, setForm] = useState(() => desde(inicial, tipoInicial))
   const [empresas, setEmpresas] = useState([])
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState(null)
@@ -32,11 +37,12 @@ export default function FormPersona({ tipoInicial = 'cliente', onGuardada, onCan
       const telefonos = form.telefonos
         .map((t) => ({ nombre: (t.nombre || '').trim(), numero: (t.numero || '').trim() }))
         .filter((t) => t.numero)
-      const p = await crearPersona({
+      const payload = {
         tipo: form.tipo, nombre: form.nombre.trim(), empresa_id: form.empresa_id || null,
         cargo: form.cargo || null, descripcion_cargo: form.descripcion_cargo || null,
         telefonos, correo: form.correo || null, extra: form.extra || {},
-      })
+      }
+      const p = editar ? await actualizarPersona(inicial.id, payload) : await crearPersona(payload)
       onGuardada?.(p)
     } catch (e) { setError(e.message); setGuardando(false) }
   }
@@ -46,9 +52,8 @@ export default function FormPersona({ tipoInicial = 'cliente', onGuardada, onCan
       <div className="campos">
         <input className="campo" placeholder="Nombre *" value={form.nombre} autoFocus
           onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
-        <select className="campo" value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
-          {Object.entries(TIPOS_PERSONA).map(([v, m]) => <option key={v} value={v}>{m.t}</option>)}
-        </select>
+        <Desplegable value={form.tipo} onChange={(v) => setForm({ ...form, tipo: v })}
+          opciones={Object.entries(TIPOS_PERSONA).map(([v, m]) => ({ valor: v, etiqueta: m.t }))} />
         <input className="campo" placeholder="Cargo" value={form.cargo}
           onChange={(e) => setForm({ ...form, cargo: e.target.value })} />
         <input className="campo" placeholder="Descripción del cargo" value={form.descripcion_cargo}
@@ -87,7 +92,7 @@ export default function FormPersona({ tipoInicial = 'cliente', onGuardada, onCan
       {error && <p style={{ color: 'var(--rojo)', fontSize: '0.85rem' }}>{error}</p>}
       <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
         <button className="btn-primario" type="submit" disabled={guardando}>
-          {guardando ? 'Guardando…' : 'Crear'}
+          {guardando ? 'Guardando…' : editar ? 'Guardar cambios' : 'Crear'}
         </button>
         {onCancelar && <button type="button" className="btn-sec-claro" onClick={onCancelar}>Cancelar</button>}
       </div>

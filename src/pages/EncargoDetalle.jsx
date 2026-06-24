@@ -22,6 +22,7 @@ import { TIPOS_PERSONA, AVISOS } from '../lib/constantes.js'
 import CamposExtra from '../components/CamposExtra.jsx'
 import SelectorEmpresa from '../components/SelectorEmpresa.jsx'
 import SelectorPersona from '../components/SelectorPersona.jsx'
+import Desplegable from '../components/Desplegable.jsx'
 import { CampoMoneda, CampoPorcentaje } from '../components/CamposNumero.jsx'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
@@ -311,10 +312,8 @@ export default function EncargoDetalle() {
         <div className="campos" style={{ marginTop: '0.75rem' }}>
           <input className="campo" placeholder="Título" value={datos.producto}
             onChange={(e) => setDatos({ ...datos, producto: e.target.value })} />
-          <select className="campo" value={datos.fase}
-            onChange={(e) => cambiarFase(e.target.value)}>
-            {FASES.map((x) => <option key={x.v} value={x.v}>{x.tLargo}</option>)}
-          </select>
+          <Desplegable value={datos.fase} onChange={cambiarFase}
+            opciones={FASES.map((x) => ({ valor: x.v, etiqueta: x.tLargo }))} />
         </div>
 
         <div style={{ marginTop: '0.75rem' }}>
@@ -378,11 +377,9 @@ export default function EncargoDetalle() {
 
         <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--borde)', paddingTop: '0.75rem' }}>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <select className="campo" value={nuevaLinea.producto_id} style={{ flex: 1, minWidth: 160 }}
-              onChange={(e) => setNuevaLinea({ ...nuevaLinea, producto_id: e.target.value })}>
-              <option value="">— Producto del catálogo —</option>
-              {catalogo.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-            </select>
+            <Desplegable style={{ flex: 1, minWidth: 160 }} placeholder="— Producto del catálogo —"
+              value={nuevaLinea.producto_id} onChange={(v) => setNuevaLinea({ ...nuevaLinea, producto_id: v })}
+              opciones={catalogo.map((p) => ({ valor: p.id, etiqueta: p.nombre }))} />
             <input className="campo" type="number" min="1" value={nuevaLinea.cantidad} style={{ width: 80 }}
               onChange={(e) => setNuevaLinea({ ...nuevaLinea, cantidad: e.target.value })} />
             <button className="btn-primario" type="button" onClick={añadirLinea}>+ Añadir</button>
@@ -440,10 +437,9 @@ export default function EncargoDetalle() {
             <input className="campo" type="time" style={{ width: 'auto' }} disabled={!nuevaTarea.fecha_limite}
               title="Hora (vacío = todo el día)" value={nuevaTarea.hora}
               onChange={(e) => setNuevaTarea({ ...nuevaTarea, hora: e.target.value })} />
-            <select className="campo" style={{ width: 'auto' }} disabled={!nuevaTarea.fecha_limite} title="Avisar antes"
-              value={nuevaTarea.aviso_min} onChange={(e) => setNuevaTarea({ ...nuevaTarea, aviso_min: Number(e.target.value) })}>
-              {AVISOS.map((a) => <option key={a.v} value={a.v}>{a.t}</option>)}
-            </select>
+            <Desplegable style={{ width: 150 }} disabled={!nuevaTarea.fecha_limite}
+              value={nuevaTarea.aviso_min} onChange={(v) => setNuevaTarea({ ...nuevaTarea, aviso_min: Number(v) })}
+              opciones={AVISOS.map((a) => ({ valor: a.v, etiqueta: a.t }))} />
           </div>
           <div style={{ marginTop: '0.5rem' }}>
             <label className="placeholder" style={{ fontSize: '0.8rem' }}>Persona (opcional)</label>
@@ -489,15 +485,9 @@ export default function EncargoDetalle() {
 
             {disponibles.length > 0 ? (
               <form onSubmit={(e) => añadirInvolucrado(e, tipo)} style={{ marginTop: '0.6rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <select className="campo" value={sel[tipo] || ''} style={{ flex: 1, minWidth: 160 }}
-                  onChange={(e) => setSel((s) => ({ ...s, [tipo]: e.target.value }))}>
-                  <option value="">— Añadir {meta.t.toLowerCase()} —</option>
-                  {disponibles.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nombre}{p.empresas?.nombre ? ` — ${p.empresas.nombre}` : ''}
-                    </option>
-                  ))}
-                </select>
+                <Desplegable style={{ flex: 1, minWidth: 160 }} placeholder={`— Añadir ${meta.t.toLowerCase()} —`}
+                  value={sel[tipo] || ''} onChange={(v) => setSel((s) => ({ ...s, [tipo]: v }))}
+                  opciones={disponibles.map((p) => ({ valor: p.id, etiqueta: `${p.nombre}${p.empresas?.nombre ? ` — ${p.empresas.nombre}` : ''}` }))} />
                 <button className="btn-primario" type="submit">+ Añadir</button>
               </form>
             ) : (
@@ -576,10 +566,9 @@ export default function EncargoDetalle() {
               value={nota.recordatorio} onChange={(e) => setNota({ ...nota, recordatorio: e.target.value })} />
             <input className="campo" type="time" style={{ width: 'auto' }} disabled={!nota.recordatorio}
               value={nota.recordatorio_hora} onChange={(e) => setNota({ ...nota, recordatorio_hora: e.target.value })} />
-            <select className="campo" style={{ width: 'auto' }} disabled={!nota.recordatorio}
-              value={nota.aviso_min} onChange={(e) => setNota({ ...nota, aviso_min: Number(e.target.value) })}>
-              {AVISOS.map((a) => <option key={a.v} value={a.v}>{a.t}</option>)}
-            </select>
+            <Desplegable style={{ width: 150 }} disabled={!nota.recordatorio}
+              value={nota.aviso_min} onChange={(v) => setNota({ ...nota, aviso_min: Number(v) })}
+              opciones={AVISOS.map((a) => ({ valor: a.v, etiqueta: a.t }))} />
           </div>
           <button className="btn-primario" type="submit" style={{ marginTop: '0.6rem' }}>+ Añadir nota</button>
         </form>

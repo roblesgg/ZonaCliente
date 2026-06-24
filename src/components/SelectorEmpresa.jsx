@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import Modal from './Modal.jsx'
 import FormEmpresa from './FormEmpresa.jsx'
+import Desplegable from './Desplegable.jsx'
 
 export default function SelectorEmpresa({ empresas, value, onChange, onCreada }) {
   const [abierto, setAbierto] = useState(false)
@@ -12,10 +13,8 @@ export default function SelectorEmpresa({ empresas, value, onChange, onCreada })
   return (
     <div>
       <div style={{ display: 'flex', gap: '0.4rem' }}>
-        <select className="campo" value={value || ''} onChange={(e) => onChange(e.target.value)} style={{ flex: 1 }}>
-          <option value="">— Empresa —</option>
-          {empresas.map((em) => <option key={em.id} value={em.id}>{em.nombre}</option>)}
-        </select>
+        <Desplegable style={{ flex: 1 }} placeholder="— Empresa —" value={value || ''} onChange={onChange}
+          opciones={empresas.map((em) => ({ valor: em.id, etiqueta: em.nombre }))} />
         <button type="button" className="btn-sec-claro" onClick={() => setAbierto(true)} title="Crear empresa nueva">
           ➕ Empresa
         </button>

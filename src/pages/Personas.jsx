@@ -10,6 +10,8 @@ import { useBorrador } from '../lib/useBorrador.js'
 import AccionesContacto from '../components/AccionesContacto.jsx'
 import CamposExtra from '../components/CamposExtra.jsx'
 import SelectorEmpresa from '../components/SelectorEmpresa.jsx'
+import Modal from '../components/Modal.jsx'
+import FormPersona from '../components/FormPersona.jsx'
 
 const vacio = () => ({
   nombre: '', empresa_id: '', cargo: '', descripcion_cargo: '',
@@ -25,6 +27,7 @@ export default function Personas({ tipo }) {
   const [form, setForm, limpiarForm] = useBorrador(`borrador-persona-${tipo}`, vacio())
   const [mostrarForm, setMostrarForm] = useState(false)
   const [guardando, setGuardando] = useState(false)
+  const [editar, setEditar] = useState(null) // persona que se está editando
 
   async function cargar() {
     setError(null) // sin "Cargando…" en recargas: no salta el scroll
@@ -186,10 +189,11 @@ export default function Personas({ tipo }) {
       ) : (
         <div className="grid" style={{ marginTop: '1rem' }}>
           {personas.map((p) => (
-            <article key={p.id} className="tarjeta">
+            <article key={p.id} className="tarjeta" style={{ cursor: 'pointer' }}
+              onClick={() => setEditar(p)} title={`Editar ${meta.t.toLowerCase()}`}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                 <h3>{p.nombre}</h3>
-                <button className="btn-icono" onClick={() => eliminar(p.id)} title="Borrar">🗑️</button>
+                <button className="btn-icono" onClick={(e) => { e.stopPropagation(); eliminar(p.id) }} title="Borrar">🗑️</button>
               </div>
               {(p.cargo || p.empresas?.nombre) && (
                 <p className="placeholder" style={{ margin: '0 0 0.3rem' }}>
@@ -200,13 +204,22 @@ export default function Personas({ tipo }) {
               {p.descripcion_cargo && (
                 <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem' }}>{p.descripcion_cargo}</p>
               )}
-              <AccionesContacto telefonos={p.telefonos} email={p.correo} />
+              <span onClick={(e) => e.stopPropagation()}>
+                <AccionesContacto telefonos={p.telefonos} email={p.correo} />
+              </span>
               <div style={{ marginTop: '0.4rem' }}>
                 <CamposExtra valor={p.extra} editable={false} />
               </div>
             </article>
           ))}
         </div>
+      )}
+
+      {editar && (
+        <Modal titulo={`Editar ${meta.t.toLowerCase()}`} onCerrar={() => setEditar(null)}>
+          <FormPersona inicial={editar} tipoInicial={tipo} onCancelar={() => setEditar(null)}
+            onGuardada={() => { setEditar(null); cargar() }} />
+        </Modal>
       )}
     </>
   )

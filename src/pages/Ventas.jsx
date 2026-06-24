@@ -11,6 +11,7 @@ import {
 import { FASES, indiceFase } from '../lib/fases.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 import SelectorEmpresa from '../components/SelectorEmpresa.jsx'
+import Desplegable from '../components/Desplegable.jsx'
 import { CampoMoneda, CampoPorcentaje } from '../components/CamposNumero.jsx'
 import { useBorrador } from '../lib/useBorrador.js'
 
@@ -129,10 +130,8 @@ export default function Ventas() {
           <div className="campos">
             <input className="campo" placeholder="Título *" value={form.producto}
               onChange={(e) => setForm({ ...form, producto: e.target.value })} autoFocus />
-            <select className="campo" value={form.fase}
-              onChange={(e) => setForm({ ...form, fase: e.target.value })}>
-              {FASES.map((f) => <option key={f.v} value={f.v}>{f.tLargo}</option>)}
-            </select>
+            <Desplegable value={form.fase} onChange={(v) => setForm({ ...form, fase: v })}
+              opciones={FASES.map((f) => ({ valor: f.v, etiqueta: f.tLargo }))} />
             <CampoMoneda value={form.ingresos_totales} placeholder="Ingresos totales (€)"
               onChange={(v) => setForm({ ...form, ingresos_totales: v })} />
             <CampoPorcentaje value={form.comision_porcentaje} placeholder="Comisión (%)"

@@ -7,6 +7,9 @@ import { listarEmpresas, crearEmpresa, borrarEmpresa } from '../lib/datos.js'
 import { TIPOS_EMPRESA, etiquetaTipoEmpresa } from '../lib/constantes.js'
 import { useBorrador } from '../lib/useBorrador.js'
 import CamposExtra from '../components/CamposExtra.jsx'
+import Desplegable from '../components/Desplegable.jsx'
+import Modal from '../components/Modal.jsx'
+import FormEmpresa from '../components/FormEmpresa.jsx'
 
 const FORM_VACIO = {
   nombre: '', tipo: 'hospital', ciudad: '', provincia: '',
@@ -20,6 +23,7 @@ export default function Empresas() {
   const [form, setForm, limpiarForm] = useBorrador('borrador-empresa', FORM_VACIO)
   const [mostrarForm, setMostrarForm] = useState(false)
   const [guardando, setGuardando] = useState(false)
+  const [editar, setEditar] = useState(null) // empresa que se está editando
 
   async function cargar() {
     setError(null) // sin "Cargando…" en recargas: no salta el scroll
@@ -100,10 +104,8 @@ export default function Empresas() {
           <div className="campos">
             <input className="campo" placeholder="Nombre *" value={form.nombre}
               onChange={(e) => setForm({ ...form, nombre: e.target.value })} autoFocus />
-            <select className="campo" value={form.tipo}
-              onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
-              {TIPOS_EMPRESA.map((t) => <option key={t.v} value={t.v}>{t.t}</option>)}
-            </select>
+            <Desplegable value={form.tipo} onChange={(v) => setForm({ ...form, tipo: v })}
+              opciones={TIPOS_EMPRESA.map((t) => ({ valor: t.v, etiqueta: t.t }))} />
             <input className="campo" placeholder="Ciudad" value={form.ciudad}
               onChange={(e) => setForm({ ...form, ciudad: e.target.value })} />
             <input className="campo" placeholder="Provincia" value={form.provincia}
@@ -142,21 +144,22 @@ export default function Empresas() {
       ) : (
         <div className="grid" style={{ marginTop: '1rem' }}>
           {empresas.map((em) => (
-            <article key={em.id} className="tarjeta">
+            <article key={em.id} className="tarjeta" style={{ cursor: 'pointer' }}
+              onClick={() => setEditar(em)} title="Editar empresa">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                 <h3>{em.nombre}</h3>
-                <button className="btn-icono" onClick={() => eliminar(em.id)} title="Borrar">🗑️</button>
+                <button className="btn-icono" onClick={(e) => { e.stopPropagation(); eliminar(em.id) }} title="Borrar">🗑️</button>
               </div>
               <p className="placeholder" style={{ margin: '0 0 0.5rem' }}>
                 {[etiquetaTipoEmpresa(em.tipo), em.ciudad, em.provincia].filter(Boolean).join(' · ') || 'Empresa'}
               </p>
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {em.telefono && (
-                  <a href={`tel:${tel(em.telefono)}`} className="badge"
+                  <a href={`tel:${tel(em.telefono)}`} className="badge" onClick={(e) => e.stopPropagation()}
                      style={{ background: '#dcfce7', color: 'var(--verde)' }}>📞 Llamar</a>
                 )}
                 {em.email && (
-                  <a href={`mailto:${em.email}`} className="badge"
+                  <a href={`mailto:${em.email}`} className="badge" onClick={(e) => e.stopPropagation()}
                      style={{ background: 'var(--azul-claro)', color: 'var(--azul)' }}>✉️ Email</a>
                 )}
               </div>
@@ -164,6 +167,13 @@ export default function Empresas() {
             </article>
           ))}
         </div>
+      )}
+
+      {editar && (
+        <Modal titulo="Editar empresa" onCerrar={() => setEditar(null)}>
+          <FormEmpresa inicial={editar} onCancelar={() => setEditar(null)}
+            onGuardada={() => { setEditar(null); cargar() }} />
+        </Modal>
       )}
     </>
   )

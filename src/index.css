@@ -678,6 +678,64 @@ a.kpis:hover .kpi {
   gap: 0.5rem;
 }
 
+/* ====== Desplegable propio (abre al tocar) ====== */
+.desplegable {
+  position: relative;
+}
+
+.desplegable-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.desplegable-flecha {
+  color: var(--texto-suave);
+  flex: none;
+  font-size: 0.85rem;
+  transition: transform 0.18s ease;
+}
+
+.desplegable-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 120;
+  background: var(--fondo);
+  border-radius: 14px;
+  box-shadow: var(--neu-out), 0 10px 26px rgba(0, 0, 0, 0.18);
+  padding: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.desplegable-op {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 0.6rem 0.7rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--texto);
+}
+
+.desplegable-op:hover {
+  box-shadow: var(--neu-in-sm);
+}
+
+.desplegable-op.sel {
+  color: var(--azul);
+  font-weight: 700;
+  box-shadow: var(--neu-in-sm);
+}
+
 /* ====== Spinner (girando al guardar) ====== */
 .spinner {
   display: inline-block;
