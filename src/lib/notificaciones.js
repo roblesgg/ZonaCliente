@@ -4,7 +4,7 @@
 
 import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
-import { listarRecordatorios, listarTareasPendientes } from './datos.js'
+import { listarRecordatorios, listarTareasPendientes, obtenerAjustes } from './datos.js'
 
 const esNativo = () => Capacitor.isNativePlatform()
 
@@ -42,12 +42,17 @@ export async function reprogramarTodo() {
     const perm = await LocalNotifications.checkPermissions()
     if (perm.display !== 'granted') return
 
-    const [recs, tars] = await Promise.all([listarRecordatorios(), listarTareasPendientes()])
-
+    // Cancela siempre lo programado (así, si se apaga el aviso, desaparece).
     const pend = await LocalNotifications.getPending()
     if (pend.notifications.length) {
       await LocalNotifications.cancel({ notifications: pend.notifications.map((n) => ({ id: n.id })) })
     }
+
+    // Si el usuario apagó los avisos del móvil en Ajustes, no programa nada.
+    const ajustes = await obtenerAjustes().catch(() => ({ notif_movil: true }))
+    if (ajustes.notif_movil === false) return
+
+    const [recs, tars] = await Promise.all([listarRecordatorios(), listarTareasPendientes()])
 
     const ahora = Date.now()
     const lista = []

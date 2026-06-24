@@ -62,13 +62,24 @@ export default function Inicio() {
   const abiertos = encargos.filter((e) => ABIERTAS.includes(e.fase))
   const ganados = encargos.filter((e) => e.fase === 'ganado')
 
-  // Tareas pendientes ordenadas por vencimiento (las sin fecha, al final).
+  // Tareas pendientes ordenadas por vencimiento (las sin fecha, al final),
+  // agrupadas por la oportunidad a la que pertenecen.
   const tareasPend = tareas.map((t) => {
     const d = t.fecha_limite ? diasHasta(t.fecha_limite) : null
     const etiqueta = d == null ? null
       : d < 0 ? `vencida hace ${-d} día(s)` : d === 0 ? 'vence hoy' : `vence en ${d} día(s)`
     return { ...t, d, etiqueta, urgente: d != null && d <= 0 }
   })
+  const gruposTareas = []
+  const indiceGrupo = {}
+  for (const t of tareasPend) {
+    const k = t.encargo_id || 'sin'
+    if (indiceGrupo[k] === undefined) {
+      indiceGrupo[k] = gruposTareas.length
+      gruposTareas.push({ encargo_id: t.encargo_id, encargo: t.encargos, tareas: [] })
+    }
+    gruposTareas[indiceGrupo[k]].tareas.push(t)
+  }
 
   // Tareas de hoy: recordatorios cuya fecha es hoy.
   const hoy = hoyISO()
@@ -119,27 +130,33 @@ export default function Inicio() {
       <div className="grid">
         <section className="tarjeta">
           <h3>✅ Tareas pendientes</h3>
-          {tareasPend.length === 0 ? (
+          {gruposTareas.length === 0 ? (
             <p className="placeholder">No hay tareas pendientes. 👍</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {tareasPend.map((t) => (
-                <Link key={t.id} to={t.encargo_id ? `/encargos/${t.encargo_id}` : '#'}
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                  <span>
-                    {t.texto}
-                    {(t.encargos?.producto || t.encargos?.empresas?.nombre) && (
-                      <span className="placeholder" style={{ display: 'block', fontSize: '0.8rem' }}>
-                        {[t.encargos?.producto, t.encargos?.empresas?.nombre].filter(Boolean).join(' · ')}
-                      </span>
-                    )}
-                  </span>
-                  {t.etiqueta && (
-                    <span className="badge" style={{ flex: 'none',
-                      background: t.urgente ? '#fee2e2' : '#fef3c7',
-                      color: t.urgente ? 'var(--rojo)' : 'var(--ambar)' }}>{t.etiqueta}</span>
-                  )}
-                </Link>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {gruposTareas.map((g) => (
+                <div key={g.encargo_id || 'sin'}>
+                  {/* Encabezado: a qué oportunidad y cliente pertenecen */}
+                  <Link to={g.encargo_id ? `/encargos/${g.encargo_id}` : '#'}
+                    style={{ display: 'block', fontWeight: 700, color: 'var(--azul)', marginBottom: '0.4rem' }}>
+                    📊 {g.encargo?.producto || 'Oportunidad'}
+                    {g.encargo?.empresas?.nombre && <span style={{ color: 'var(--texto-suave)', fontWeight: 500 }}> · {g.encargo.empresas.nombre}</span>}
+                  </Link>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingLeft: '0.5rem',
+                    borderLeft: '2px solid var(--borde)' }}>
+                    {g.tareas.map((t) => (
+                      <Link key={t.id} to={g.encargo_id ? `/encargos/${g.encargo_id}` : '#'}
+                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                        <span style={{ whiteSpace: 'pre-wrap' }}>{t.texto}</span>
+                        {t.etiqueta && (
+                          <span className="badge" style={{ flex: 'none',
+                            background: t.urgente ? '#fee2e2' : '#fef3c7',
+                            color: t.urgente ? 'var(--rojo)' : 'var(--ambar)' }}>{t.etiqueta}</span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}

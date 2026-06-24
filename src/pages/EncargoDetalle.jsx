@@ -47,6 +47,8 @@ export default function EncargoDetalle() {
   const [guardado, setGuardado] = useState(false)
   const saltarAutosave = useRef(true)
   const guardarTimer = useRef(null)
+  const datosRef = useRef(datos)     // siempre los datos más recientes
+  const pendienteRef = useRef(false) // hay cambios sin guardar
 
   // Formularios auxiliares
   const [nuevaLinea, setNuevaLinea] = useState({ producto_id: '', cantidad: 1 })
@@ -107,32 +109,56 @@ export default function EncargoDetalle() {
     setDatos((d) => ({ ...d, comision_porcentaje: v, comision_esperada: comisionDe(d.ingresos_totales, v) || d.comision_esperada }))
   }
 
-  // Autoguardado: guarda los datos principales sin botón (no recarga).
+  // Autoguardado: guarda los datos principales sin botón (no recarga). Lee
+  // siempre los datos más recientes (datosRef) para poder volcar al salir.
   async function guardarDatos() {
+    const d = datosRef.current
+    pendienteRef.current = false
     setGuardando(true); setError(null)
     try {
       await actualizarEncargo(id, {
-        producto: datos.producto || null,
-        empresa_id: datos.empresa_id || null,
-        descripcion: datos.descripcion || null,
-        fase: datos.fase,
-        ingresos_totales: datos.ingresos_totales === '' ? null : Number(datos.ingresos_totales),
-        comision_porcentaje: datos.comision_porcentaje === '' ? null : Number(datos.comision_porcentaje),
-        comision_esperada: datos.comision_esperada === '' ? null : Number(datos.comision_esperada),
-        extra: datos.extra || {},
+        producto: d.producto || null,
+        empresa_id: d.empresa_id || null,
+        descripcion: d.descripcion || null,
+        fase: d.fase,
+        ingresos_totales: d.ingresos_totales === '' ? null : Number(d.ingresos_totales),
+        comision_porcentaje: d.comision_porcentaje === '' ? null : Number(d.comision_porcentaje),
+        comision_esperada: d.comision_esperada === '' ? null : Number(d.comision_esperada),
+        extra: d.extra || {},
       })
       setGuardado(true)
     } catch (e) { setError(e.message) }
     finally { setGuardando(false) }
   }
 
+  // Mantén datosRef al día y marca que hay cambios pendientes al editar.
+  useEffect(() => { datosRef.current = datos })
+
   // Cada cambio en los datos dispara un guardado (con un pequeño retardo).
   useEffect(() => {
     if (saltarAutosave.current) { saltarAutosave.current = false; return }
+    pendienteRef.current = true
     clearTimeout(guardarTimer.current)
-    guardarTimer.current = setTimeout(guardarDatos, 700)
+    guardarTimer.current = setTimeout(guardarDatos, 500)
     return () => clearTimeout(guardarTimer.current)
   }, [datos]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Vuelca lo pendiente al cerrar la app, cambiar de app o salir de la ficha.
+  useEffect(() => {
+    const flush = () => {
+      if (!pendienteRef.current) return
+      clearTimeout(guardarTimer.current)
+      guardarDatos()
+    }
+    const alOcultar = () => { if (document.visibilityState === 'hidden') flush() }
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', alOcultar)
+    return () => {
+      window.removeEventListener('pagehide', flush)
+      document.removeEventListener('visibilitychange', alOcultar)
+      flush()
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // El estado se guarda al instante.
   async function cambiarFase(nuevaFase) {

@@ -1,6 +1,5 @@
-// Ajustes globales de la app: nombre y acceso al catálogo de productos.
-// (La comisión ya no es global: se define el % en cada oportunidad y la
-// comisión esperada se recalcula sola.)
+// Ajustes del usuario: nombre, preferencias de aviso (móvil / correo) y acceso
+// al catálogo de productos.
 
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -9,7 +8,7 @@ import { obtenerAjustes, actualizarAjustes } from '../lib/datos.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
 export default function Ajustes() {
-  const [form, setForm] = useState({ nombre: '' })
+  const [form, setForm] = useState({ nombre: '', notif_movil: true, notif_correo: false, correo_avisos: '' })
   const [cargando, setCargando] = useState(true)
   const [guardando, setGuardando] = useState(false)
   const [guardado, setGuardado] = useState(false)
@@ -20,7 +19,12 @@ export default function Ajustes() {
     ;(async () => {
       try {
         const a = await obtenerAjustes()
-        setForm({ nombre: a.nombre || '' })
+        setForm({
+          nombre: a.nombre || '',
+          notif_movil: a.notif_movil ?? true,
+          notif_correo: a.notif_correo ?? false,
+          correo_avisos: a.correo_avisos || '',
+        })
       } catch (e) {
         setError(e.message)
       } finally {
@@ -35,7 +39,12 @@ export default function Ajustes() {
     setError(null)
     setGuardado(false)
     try {
-      await actualizarAjustes({ nombre: form.nombre || null })
+      await actualizarAjustes({
+        nombre: form.nombre || null,
+        notif_movil: form.notif_movil,
+        notif_correo: form.notif_correo,
+        correo_avisos: form.correo_avisos || null,
+      })
       setGuardado(true)
     } catch (e) {
       setError(e.message)
@@ -55,6 +64,27 @@ export default function Ajustes() {
         <h3>Nombre</h3>
         <input className="campo" placeholder="Tu nombre (opcional)" value={form.nombre}
           onChange={(e) => setForm({ ...form, nombre: e.target.value })} style={{ maxWidth: 320 }} />
+
+        <h3 style={{ marginTop: '1.25rem' }}>Avisos de recordatorios y tareas</h3>
+        <p className="placeholder" style={{ marginTop: 0 }}>Elige cómo quieres que te avisemos.</p>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.6rem' }}>
+          <input type="checkbox" checked={form.notif_movil} style={{ width: 18, height: 18 }}
+            onChange={(e) => setForm({ ...form, notif_movil: e.target.checked })} />
+          <span>📱 Notificación en el móvil (app instalada)</span>
+        </label>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.6rem' }}>
+          <input type="checkbox" checked={form.notif_correo} style={{ width: 18, height: 18 }}
+            onChange={(e) => setForm({ ...form, notif_correo: e.target.checked })} />
+          <span>✉️ Aviso por correo electrónico</span>
+        </label>
+
+        {form.notif_correo && (
+          <input className="campo" type="email" placeholder="¿A qué correo? (ej. tu@correo.com)"
+            value={form.correo_avisos} onChange={(e) => setForm({ ...form, correo_avisos: e.target.value })}
+            style={{ maxWidth: 320, marginBottom: '0.4rem' }} />
+        )}
 
         {error && <p style={{ color: 'var(--rojo)', fontSize: '0.9rem' }}>Error: {error}</p>}
 

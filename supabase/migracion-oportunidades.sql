@@ -168,9 +168,12 @@ create table if not exists tareas (
 -- 9) AJUSTES globales (una sola fila): % de comisión, etc.
 -- -------------------------------------------------------------
 create table ajustes (
-  user_id uuid primary key default auth.uid() references auth.users(id) on delete cascade,
-  nombre  text,
-  extra   jsonb not null default '{}'::jsonb
+  user_id       uuid primary key default auth.uid() references auth.users(id) on delete cascade,
+  nombre        text,
+  notif_movil   boolean not null default true,    -- avisar con notificación del móvil
+  notif_correo  boolean not null default false,   -- avisar también por correo
+  correo_avisos text,                              -- a qué correo enviar los avisos
+  extra         jsonb not null default '{}'::jsonb
 );
 
 -- -------------------------------------------------------------

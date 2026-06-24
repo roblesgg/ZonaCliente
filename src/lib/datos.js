@@ -320,7 +320,7 @@ export async function obtenerAjustes() {
   // Con RLS por usuario, solo es visible la fila propia (0 o 1).
   const { data, error } = await supabase.from('ajustes').select('*').maybeSingle()
   if (error) throw error
-  return data || { nombre: '', extra: {} }
+  return data || { nombre: '', notif_movil: true, notif_correo: false, correo_avisos: '', extra: {} }
 }
 
 export async function actualizarAjustes(cambios) {
