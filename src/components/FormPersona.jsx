@@ -1,0 +1,96 @@
+import { useEffect, useState } from 'react'
+import { crearPersona, listarEmpresas } from '../lib/datos.js'
+import { TIPOS_PERSONA } from '../lib/constantes.js'
+import SelectorEmpresa from './SelectorEmpresa.jsx'
+import CamposExtra from './CamposExtra.jsx'
+
+const vacio = (tipo) => ({
+  tipo, nombre: '', empresa_id: '', cargo: '', descripcion_cargo: '',
+  telefonos: [{ nombre: '', numero: '' }], correo: '', extra: {},
+})
+
+// Formulario completo de persona (cliente / socio / proveedor) para el popup.
+export default function FormPersona({ tipoInicial = 'cliente', onGuardada, onCancelar }) {
+  const [form, setForm] = useState(() => vacio(tipoInicial))
+  const [empresas, setEmpresas] = useState([])
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState(null)
+
+  useEffect(() => { listarEmpresas().then(setEmpresas).catch(() => {}) }, [])
+
+  function setTelefono(i, campo, v) {
+    setForm((f) => { const tel = [...f.telefonos]; tel[i] = { ...tel[i], [campo]: v }; return { ...f, telefonos: tel } })
+  }
+  const añadirTelefono = () => setForm((f) => ({ ...f, telefonos: [...f.telefonos, { nombre: '', numero: '' }] }))
+  const quitarTelefono = (i) => setForm((f) => ({ ...f, telefonos: f.telefonos.filter((_, j) => j !== i) }))
+
+  async function guardar(e) {
+    e.preventDefault()
+    if (!form.nombre.trim()) return
+    setGuardando(true); setError(null)
+    try {
+      const telefonos = form.telefonos
+        .map((t) => ({ nombre: (t.nombre || '').trim(), numero: (t.numero || '').trim() }))
+        .filter((t) => t.numero)
+      const p = await crearPersona({
+        tipo: form.tipo, nombre: form.nombre.trim(), empresa_id: form.empresa_id || null,
+        cargo: form.cargo || null, descripcion_cargo: form.descripcion_cargo || null,
+        telefonos, correo: form.correo || null, extra: form.extra || {},
+      })
+      onGuardada?.(p)
+    } catch (e) { setError(e.message); setGuardando(false) }
+  }
+
+  return (
+    <form onSubmit={guardar}>
+      <div className="campos">
+        <input className="campo" placeholder="Nombre *" value={form.nombre} autoFocus
+          onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
+        <select className="campo" value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
+          {Object.entries(TIPOS_PERSONA).map(([v, m]) => <option key={v} value={v}>{m.t}</option>)}
+        </select>
+        <input className="campo" placeholder="Cargo" value={form.cargo}
+          onChange={(e) => setForm({ ...form, cargo: e.target.value })} />
+        <input className="campo" placeholder="Descripción del cargo" value={form.descripcion_cargo}
+          onChange={(e) => setForm({ ...form, descripcion_cargo: e.target.value })} />
+        <input className="campo" placeholder="Correo" value={form.correo}
+          onChange={(e) => setForm({ ...form, correo: e.target.value })} />
+      </div>
+
+      <div style={{ marginTop: '0.6rem' }}>
+        <label className="placeholder" style={{ fontSize: '0.8rem' }}>Empresa</label>
+        <SelectorEmpresa empresas={empresas} value={form.empresa_id}
+          onChange={(id) => setForm((f) => ({ ...f, empresa_id: id }))}
+          onCreada={() => listarEmpresas().then(setEmpresas)} />
+      </div>
+
+      <div style={{ marginTop: '0.6rem' }}>
+        <label className="placeholder" style={{ fontSize: '0.8rem' }}>Teléfonos</label>
+        {form.telefonos.map((tel, i) => (
+          <div key={i} style={{ display: 'flex', gap: '0.4rem', marginTop: '0.3rem' }}>
+            <input className="campo" placeholder="Nombre (ej. Oficina)" value={tel.nombre} style={{ flex: 1 }}
+              onChange={(e) => setTelefono(i, 'nombre', e.target.value)} />
+            <input className="campo" placeholder="Número" value={tel.numero} style={{ flex: 1 }}
+              onChange={(e) => setTelefono(i, 'numero', e.target.value)} />
+            {form.telefonos.length > 1 && (
+              <button type="button" className="btn-icono" onClick={() => quitarTelefono(i)} title="Quitar">🗑️</button>
+            )}
+          </div>
+        ))}
+        <button type="button" className="btn-sec-claro" style={{ marginTop: '0.4rem' }} onClick={añadirTelefono}>+ Teléfono</button>
+      </div>
+
+      <div style={{ marginTop: '0.6rem' }}>
+        <CamposExtra valor={form.extra} onChange={(extra) => setForm({ ...form, extra })} />
+      </div>
+
+      {error && <p style={{ color: 'var(--rojo)', fontSize: '0.85rem' }}>{error}</p>}
+      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
+        <button className="btn-primario" type="submit" disabled={guardando}>
+          {guardando ? 'Guardando…' : 'Crear'}
+        </button>
+        {onCancelar && <button type="button" className="btn-sec-claro" onClick={onCancelar}>Cancelar</button>}
+      </div>
+    </form>
+  )
+}

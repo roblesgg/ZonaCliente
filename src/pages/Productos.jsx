@@ -22,7 +22,7 @@ export default function Productos() {
   const [guardando, setGuardando] = useState(false)
 
   async function cargar() {
-    setCargando(true); setError(null)
+    setError(null) // sin "Cargando…" en recargas: no salta el scroll
     try { setProductos(await listarProductos()) }
     catch (e) { setError(e.message) }
     finally { setCargando(false) }

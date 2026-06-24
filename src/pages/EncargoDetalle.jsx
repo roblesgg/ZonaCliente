@@ -13,14 +13,15 @@ import {
   listarProductos, crearProducto,
   listarProductosDeOportunidad, añadirProductoAOportunidad, actualizarLineaProducto, quitarProductoDeOportunidad,
   listarPersonas, listarPersonasDeOportunidad, añadirPersonaAOportunidad, quitarPersonaDeOportunidad,
-  actualizarDescripcionInvolucrado, listarRecordatorios,
+  actualizarDescripcionInvolucrado,
   listarTareasDeEncargo, crearTarea, actualizarTarea, borrarTarea,
 } from '../lib/datos.js'
-import { sincronizarRecordatorios } from '../lib/notificaciones.js'
+import { reprogramarTodo } from '../lib/notificaciones.js'
 import { FASES, faseInfo } from '../lib/fases.js'
-import { TIPOS_PERSONA, AVISOS, TIPOS_ACTIVIDAD } from '../lib/constantes.js'
+import { TIPOS_PERSONA, AVISOS } from '../lib/constantes.js'
 import CamposExtra from '../components/CamposExtra.jsx'
 import SelectorEmpresa from '../components/SelectorEmpresa.jsx'
+import SelectorPersona from '../components/SelectorPersona.jsx'
 import { CampoMoneda, CampoPorcentaje } from '../components/CamposNumero.jsx'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
@@ -52,17 +53,17 @@ export default function EncargoDetalle() {
   const [productoRapido, setProductoRapido] = useState('')
   const [sel, setSel] = useState({})       // persona seleccionada por tipo
   const [descr, setDescr] = useState({})   // descripción en edición por involucrado
-  const [oferta, setOferta] = useState({ empresa_id: '', precio: '', notas: '' })
-  const [nota, setNota] = useState({ tipo: 'nota', texto: '', recordatorio: '', recordatorio_hora: '', aviso_min: 0 })
-  const [nuevaTarea, setNuevaTarea] = useState({ texto: '', fecha_limite: '' })
+  const [oferta, setOferta] = useState({ de_persona_id: '', para_persona_id: '', precio: '', notas: '' })
+  const [nota, setNota] = useState({ texto: '', recordatorio: '', recordatorio_hora: '', aviso_min: 0 })
+  const [nuevaTarea, setNuevaTarea] = useState({ texto: '', fecha_limite: '', hora: '', aviso_min: 0, persona_id: '' })
 
-  // Reprograma los avisos del móvil tras tocar recordatorios.
-  async function reprogramarAvisos() {
-    try { sincronizarRecordatorios(await listarRecordatorios()) } catch { /* ignorar */ }
+  // Reprograma los avisos del móvil tras tocar recordatorios o tareas.
+  function reprogramarAvisos() {
+    try { reprogramarTodo() } catch { /* ignorar */ }
   }
 
   async function cargar() {
-    setCargando(true); setError(null)
+    setError(null) // sin "Cargando…" en las recargas: no salta el scroll arriba
     try {
       const [enc, lin, inv, ofs, nts, emps, cat, pers, trs] = await Promise.all([
         obtenerEncargo(id), listarProductosDeOportunidad(id), listarPersonasDeOportunidad(id),
@@ -133,7 +134,7 @@ export default function EncargoDetalle() {
     return () => clearTimeout(guardarTimer.current)
   }, [datos]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // El estado se guarda al instante y queda registrado en el historial.
+  // El estado se guarda al instante.
   async function cambiarFase(nuevaFase) {
     const anterior = datos.fase
     if (nuevaFase === anterior) return
@@ -141,8 +142,6 @@ export default function EncargoDetalle() {
     setDatos((d) => ({ ...d, fase: nuevaFase }))
     try {
       await actualizarEncargo(id, { fase: nuevaFase })
-      await crearNota({ encargo_id: id, tipo: 'estado', texto: `Pasó a "${faseInfo(nuevaFase).tLargo}"` })
-      setNotas(await listarNotasDeEncargo(id))
       setEncargo((prev) => (prev ? { ...prev, fase: nuevaFase } : prev))
     } catch (e) { setError(e.message) }
   }
@@ -152,17 +151,24 @@ export default function EncargoDetalle() {
     e.preventDefault()
     if (!nuevaTarea.texto.trim()) return
     try {
-      await crearTarea({ encargo_id: id, texto: nuevaTarea.texto.trim(), fecha_limite: nuevaTarea.fecha_limite || null })
-      setNuevaTarea({ texto: '', fecha_limite: '' })
+      await crearTarea({
+        encargo_id: id, texto: nuevaTarea.texto.trim(),
+        fecha_limite: nuevaTarea.fecha_limite || null,
+        hora: nuevaTarea.fecha_limite ? (nuevaTarea.hora || null) : null,
+        aviso_min: nuevaTarea.fecha_limite ? Number(nuevaTarea.aviso_min) || 0 : 0,
+        persona_id: nuevaTarea.persona_id || null,
+      })
+      setNuevaTarea({ texto: '', fecha_limite: '', hora: '', aviso_min: 0, persona_id: '' })
       setTareas(await listarTareasDeEncargo(id))
+      reprogramarAvisos()
     } catch (e) { setError(e.message) }
   }
   async function alternarTarea(t) {
-    try { await actualizarTarea(t.id, { completada: !t.completada }); setTareas(await listarTareasDeEncargo(id)) }
+    try { await actualizarTarea(t.id, { completada: !t.completada }); setTareas(await listarTareasDeEncargo(id)); reprogramarAvisos() }
     catch (e) { setError(e.message) }
   }
   async function quitarTarea(tid) {
-    try { await borrarTarea(tid); setTareas(await listarTareasDeEncargo(id)) }
+    try { await borrarTarea(tid); setTareas(await listarTareasDeEncargo(id)); reprogramarAvisos() }
     catch (e) { setError(e.message) }
   }
 
@@ -209,13 +215,15 @@ export default function EncargoDetalle() {
 
   async function añadirOferta(e) {
     e.preventDefault()
-    if (!oferta.empresa_id && !oferta.precio) return
+    if (!oferta.de_persona_id && !oferta.precio) return
     try {
       await crearOferta({
-        encargo_id: id, empresa_id: oferta.empresa_id || null,
+        encargo_id: id,
+        de_persona_id: oferta.de_persona_id || null,
+        para_persona_id: oferta.para_persona_id || null,
         precio: oferta.precio ? Number(oferta.precio) : null, notas: oferta.notas || null,
       })
-      setOferta({ empresa_id: '', precio: '', notas: '' })
+      setOferta({ de_persona_id: '', para_persona_id: '', precio: '', notas: '' })
       await cargar()
     } catch (e) { setError(e.message) }
   }
@@ -226,13 +234,12 @@ export default function EncargoDetalle() {
     try {
       await crearNota({
         encargo_id: id,
-        tipo: nota.tipo || 'nota',
         texto: nota.texto,
         recordatorio: nota.recordatorio || null,
         recordatorio_hora: nota.recordatorio ? (nota.recordatorio_hora || null) : null,
         aviso_min: nota.recordatorio ? Number(nota.aviso_min) || 0 : 0,
       })
-      setNota({ tipo: 'nota', texto: '', recordatorio: '', recordatorio_hora: '', aviso_min: 0 })
+      setNota({ texto: '', recordatorio: '', recordatorio_hora: '', aviso_min: 0 })
       await cargar()
       reprogramarAvisos()
     } catch (e) { setError(e.message) }
@@ -375,35 +382,50 @@ export default function EncargoDetalle() {
             {tareas.map((t) => {
               const vencida = !t.completada && t.fecha_limite && t.fecha_limite < hoyStr
               return (
-                <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem',
-                  padding: '0.4rem 0.6rem', background: 'var(--fondo)', borderRadius: 'var(--radio)' }}>
+                <div key={t.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem',
+                  padding: '0.5rem 0.6rem', background: 'var(--fondo)', borderRadius: 'var(--radio)' }}>
                   <input type="checkbox" checked={t.completada} onChange={() => alternarTarea(t)}
-                    style={{ width: 18, height: 18, flex: 'none' }} />
-                  <span style={{ flex: 1, textDecoration: t.completada ? 'line-through' : 'none',
+                    style={{ width: 18, height: 18, flex: 'none', marginTop: '0.15rem' }} />
+                  <div style={{ flex: 1, textDecoration: t.completada ? 'line-through' : 'none',
                     color: t.completada ? 'var(--texto-suave)' : 'inherit' }}>
-                    {t.texto}
-                    {t.fecha_limite && (
-                      <span className="badge" style={{ marginLeft: '0.5rem',
-                        background: vencida ? '#fee2e2' : '#fef3c7', color: vencida ? 'var(--rojo)' : 'var(--ambar)' }}>
-                        📅 {t.fecha_limite}
-                      </span>
-                    )}
-                  </span>
+                    <div style={{ whiteSpace: 'pre-wrap' }}>{t.texto}</div>
+                    <div style={{ marginTop: '0.2rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                      {t.fecha_limite && (
+                        <span className="badge" style={{ background: vencida ? '#fee2e2' : '#fef3c7', color: vencida ? 'var(--rojo)' : 'var(--ambar)' }}>
+                          📅 {t.fecha_limite}{t.hora ? ` ${String(t.hora).slice(0, 5)}` : ' · todo el día'}
+                        </span>
+                      )}
+                      {t.personas?.nombre && <span className="placeholder" style={{ fontSize: '0.8rem' }}>👤 {t.personas.nombre}</span>}
+                    </div>
+                  </div>
                   <button className="btn-icono" title="Borrar" onClick={() => quitarTarea(t.id)}>🗑️</button>
                 </div>
               )
             })}
           </div>
         )}
-        <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--borde)', paddingTop: '0.75rem',
-          display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <input className="campo" placeholder="Nueva tarea…" value={nuevaTarea.texto} style={{ flex: 1, minWidth: 160 }}
-            onChange={(e) => setNuevaTarea({ ...nuevaTarea, texto: e.target.value })}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); añadirTarea(e) } }} />
-          <input className="campo" type="date" style={{ width: 'auto' }} value={nuevaTarea.fecha_limite}
-            title="Fecha límite (opcional)"
-            onChange={(e) => setNuevaTarea({ ...nuevaTarea, fecha_limite: e.target.value })} />
-          <button className="btn-primario" type="button" onClick={añadirTarea}>+ Tarea</button>
+
+        <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--borde)', paddingTop: '0.75rem' }}>
+          <textarea className="campo" rows={2} placeholder="Nueva tarea…" value={nuevaTarea.texto}
+            onChange={(e) => setNuevaTarea({ ...nuevaTarea, texto: e.target.value })} />
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+            <input className="campo" type="date" style={{ width: 'auto' }} title="Fecha límite (opcional)"
+              value={nuevaTarea.fecha_limite} onChange={(e) => setNuevaTarea({ ...nuevaTarea, fecha_limite: e.target.value })} />
+            <input className="campo" type="time" style={{ width: 'auto' }} disabled={!nuevaTarea.fecha_limite}
+              title="Hora (vacío = todo el día)" value={nuevaTarea.hora}
+              onChange={(e) => setNuevaTarea({ ...nuevaTarea, hora: e.target.value })} />
+            <select className="campo" style={{ width: 'auto' }} disabled={!nuevaTarea.fecha_limite} title="Avisar antes"
+              value={nuevaTarea.aviso_min} onChange={(e) => setNuevaTarea({ ...nuevaTarea, aviso_min: Number(e.target.value) })}>
+              {AVISOS.map((a) => <option key={a.v} value={a.v}>{a.t}</option>)}
+            </select>
+          </div>
+          <div style={{ marginTop: '0.5rem' }}>
+            <label className="placeholder" style={{ fontSize: '0.8rem' }}>Persona (opcional)</label>
+            <SelectorPersona personas={personas} value={nuevaTarea.persona_id}
+              onChange={(pid) => setNuevaTarea((t) => ({ ...t, persona_id: pid }))}
+              onCreada={async () => setPersonas(await listarPersonas())} />
+          </div>
+          <button className="btn-primario" type="button" onClick={añadirTarea} style={{ marginTop: '0.6rem' }}>+ Tarea</button>
         </div>
       </section>
 
@@ -461,9 +483,9 @@ export default function EncargoDetalle() {
         )
       })}
 
-      {/* Ofertas / comparativa */}
+      {/* Ofertas: quién la hace y a quién */}
       <section className="tarjeta" style={{ marginTop: '1rem' }}>
-        <h3>💼 Ofertas de proveedores</h3>
+        <h3>💼 Ofertas</h3>
         {ofertas.length === 0 ? (
           <p className="placeholder">Aún no hay ofertas. Añade una abajo para comparar precios.</p>
         ) : (
@@ -474,7 +496,8 @@ export default function EncargoDetalle() {
                 <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   padding: '0.5rem 0.7rem', borderRadius: 'var(--radio)', background: esMin ? '#dcfce7' : 'var(--fondo)' }}>
                   <div>
-                    <strong>{o.empresas?.nombre || 'Proveedor'}</strong>
+                    <strong>{o.de_persona?.nombre || 'Alguien'}</strong>
+                    <span className="placeholder"> → {o.para_persona?.nombre || '—'}</span>
                     {esMin && <span className="badge" style={{ marginLeft: '0.5rem', background: 'var(--verde)', color: '#fff' }}>Más barata</span>}
                     {o.notas && <div className="placeholder" style={{ fontSize: '0.8rem' }}>{o.notas}</div>}
                   </div>
@@ -488,42 +511,41 @@ export default function EncargoDetalle() {
           </div>
         )}
 
-        <form onSubmit={añadirOferta} style={{ marginTop: '0.75rem', borderTop: '1px solid var(--borde)', paddingTop: '0.75rem' }}>
+        <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--borde)', paddingTop: '0.75rem' }}>
           <div className="campos">
-            <select className="campo" value={oferta.empresa_id}
-              onChange={(e) => setOferta({ ...oferta, empresa_id: e.target.value })}>
-              <option value="">— Proveedor —</option>
-              {empresas.map((em) => <option key={em.id} value={em.id}>{em.nombre}</option>)}
-            </select>
+            <div>
+              <label className="placeholder" style={{ fontSize: '0.8rem' }}>Quién la hace</label>
+              <SelectorPersona personas={personas} value={oferta.de_persona_id}
+                onChange={(pid) => setOferta((o) => ({ ...o, de_persona_id: pid }))}
+                onCreada={async () => setPersonas(await listarPersonas())} />
+            </div>
+            <div>
+              <label className="placeholder" style={{ fontSize: '0.8rem' }}>A quién</label>
+              <SelectorPersona personas={personas} value={oferta.para_persona_id}
+                onChange={(pid) => setOferta((o) => ({ ...o, para_persona_id: pid }))}
+                onCreada={async () => setPersonas(await listarPersonas())} />
+            </div>
+          </div>
+          <div className="campos" style={{ marginTop: '0.5rem' }}>
             <CampoMoneda value={oferta.precio} placeholder="Precio (€)"
               onChange={(v) => setOferta({ ...oferta, precio: v })} />
             <input className="campo" placeholder="Notas (ej. plazo, garantía)" value={oferta.notas}
               onChange={(e) => setOferta({ ...oferta, notas: e.target.value })} />
           </div>
-          <button className="btn-primario" type="submit" style={{ marginTop: '0.6rem' }}>+ Añadir oferta</button>
-        </form>
+          <button className="btn-primario" type="button" onClick={añadirOferta} style={{ marginTop: '0.6rem' }}>+ Añadir oferta</button>
+        </div>
       </section>
 
-      {/* Historial de actividad (apuntes, correos, llamadas, cambios de estado) */}
+      {/* Notas (con recordatorio opcional) */}
       <section className="tarjeta" style={{ marginTop: '1rem' }}>
-        <h3>🗒️ Actividad</h3>
+        <h3>🗒️ Notas</h3>
         <form onSubmit={añadirNota} style={{ marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
-            {['nota', 'correo', 'llamada'].map((t) => (
-              <button type="button" key={t}
-                className={nota.tipo === t ? 'btn-primario' : 'btn-sec-claro'}
-                onClick={() => setNota({ ...nota, tipo: t })}>
-                {TIPOS_ACTIVIDAD[t].icono} {TIPOS_ACTIVIDAD[t].t}
-              </button>
-            ))}
-          </div>
-          <textarea className="campo" rows={2}
-            placeholder={nota.tipo === 'correo' ? 'Resumen del correo enviado…' : nota.tipo === 'llamada' ? 'Resumen de la llamada…' : 'Escribe un apunte…'}
+          <textarea className="campo" rows={2} placeholder="Escribe una nota…"
             value={nota.texto} onChange={(e) => setNota({ ...nota, texto: e.target.value })} />
 
-          {/* Recordatorio con fecha, hora y antelación del aviso */}
+          {/* Recordatorio opcional con fecha, hora y antelación del aviso */}
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-            <label className="placeholder" style={{ fontSize: '0.85rem' }}>🔔 Recordatorio:</label>
+            <label className="placeholder" style={{ fontSize: '0.85rem' }}>🔔 Recordar (opcional):</label>
             <input className="campo" type="date" style={{ width: 'auto' }}
               value={nota.recordatorio} onChange={(e) => setNota({ ...nota, recordatorio: e.target.value })} />
             <input className="campo" type="time" style={{ width: 'auto' }} disabled={!nota.recordatorio}
@@ -533,32 +555,29 @@ export default function EncargoDetalle() {
               {AVISOS.map((a) => <option key={a.v} value={a.v}>{a.t}</option>)}
             </select>
           </div>
-          <button className="btn-primario" type="submit" style={{ marginTop: '0.6rem' }}>+ Añadir</button>
+          <button className="btn-primario" type="submit" style={{ marginTop: '0.6rem' }}>+ Añadir nota</button>
         </form>
 
         {notas.length === 0 ? (
-          <p className="placeholder">Sin actividad todavía.</p>
+          <p className="placeholder">Sin notas todavía.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            {notas.map((n) => {
-              const act = TIPOS_ACTIVIDAD[n.tipo] || TIPOS_ACTIVIDAD.nota
-              return (
-                <div key={n.id} style={{ borderLeft: '3px solid var(--azul)', paddingLeft: '0.7rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
-                    <span><span title={act.t}>{act.icono}</span> {n.texto}</span>
-                    <button className="btn-icono" onClick={async () => { await borrarNota(n.id); cargar(); reprogramarAvisos() }} title="Borrar">🗑️</button>
-                  </div>
-                  <div className="placeholder" style={{ fontSize: '0.75rem' }}>
-                    {new Date(n.creado_en).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}
-                    {n.recordatorio && (
-                      <span className="badge" style={{ marginLeft: '0.5rem', background: '#fef3c7', color: 'var(--ambar)' }}>
-                        🔔 {n.recordatorio}{n.recordatorio_hora ? ` ${String(n.recordatorio_hora).slice(0, 5)}` : ''}
-                      </span>
-                    )}
-                  </div>
+            {notas.map((n) => (
+              <div key={n.id} style={{ borderLeft: '3px solid var(--azul)', paddingLeft: '0.7rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
+                  <span style={{ whiteSpace: 'pre-wrap' }}>{n.texto}</span>
+                  <button className="btn-icono" onClick={async () => { await borrarNota(n.id); cargar(); reprogramarAvisos() }} title="Borrar">🗑️</button>
                 </div>
-              )
-            })}
+                <div className="placeholder" style={{ fontSize: '0.75rem' }}>
+                  {new Date(n.creado_en).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}
+                  {n.recordatorio && (
+                    <span className="badge" style={{ marginLeft: '0.5rem', background: '#fef3c7', color: 'var(--ambar)' }}>
+                      🔔 {n.recordatorio}{n.recordatorio_hora ? ` ${String(n.recordatorio_hora).slice(0, 5)}` : ''}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </section>

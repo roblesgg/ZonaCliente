@@ -4,8 +4,8 @@
 
 import { useEffect, useState } from 'react'
 import { supabaseConfigurado } from '../lib/supabase.js'
-import { listarRecordatorios, listarTareasPendientes, crearNota, borrarNota } from '../lib/datos.js'
-import { pedirPermisoNotificaciones, sincronizarRecordatorios } from '../lib/notificaciones.js'
+import { listarRecordatorios, listarTareasPendientes, listarEncargos, crearNota, borrarNota } from '../lib/datos.js'
+import { pedirPermisoNotificaciones, reprogramarTodo } from '../lib/notificaciones.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
 const MESES = [
@@ -51,16 +51,20 @@ export default function Calendario() {
   const [mes, setMes] = useState(hoy.getMonth())
   const [diaSel, setDiaSel] = useState(clave(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()))
   const [eventos, setEventos] = useState({})
+  const [encargos, setEncargos] = useState([])
   const [cargando, setCargando] = useState(true)
   const [nuevoTexto, setNuevoTexto] = useState('')
+  const [nuevoEncargoId, setNuevoEncargoId] = useState('')
   const [guardando, setGuardando] = useState(false)
 
   async function cargar() {
     try {
-      const [tars, recs] = await Promise.all([listarTareasPendientes(), listarRecordatorios()])
+      const [tars, recs, encs] = await Promise.all([
+        listarTareasPendientes(), listarRecordatorios(), listarEncargos(),
+      ])
       setEventos(construirEventos(tars, recs))
-      // Reprograma los avisos del móvil con los recordatorios al día.
-      sincronizarRecordatorios(recs)
+      setEncargos(encs)
+      reprogramarTodo() // reprograma los avisos del móvil
     } catch (e) {
       console.error(e)
     } finally {
@@ -95,8 +99,9 @@ export default function Calendario() {
     if (!nuevoTexto.trim()) return
     setGuardando(true)
     try {
-      await crearNota({ texto: nuevoTexto.trim(), recordatorio: diaSel, encargo_id: null })
+      await crearNota({ texto: nuevoTexto.trim(), recordatorio: diaSel, encargo_id: nuevoEncargoId || null })
       setNuevoTexto('')
+      setNuevoEncargoId('')
       await cargar()
     } catch (e) {
       console.error(e)
@@ -178,14 +183,21 @@ export default function Calendario() {
 
             {/* Apuntar algo en este día */}
             <form onSubmit={añadirRecordatorio}
-              style={{ marginTop: '1rem', borderTop: '1px solid var(--borde)', paddingTop: '0.75rem',
-                display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <input className="campo" style={{ flex: 1, minWidth: 160 }}
-                placeholder={`Apuntar algo el ${diaSelTexto}…`}
+              style={{ marginTop: '1rem', borderTop: '1px solid var(--borde)', paddingTop: '0.75rem' }}>
+              <input className="campo" placeholder={`Apuntar algo el ${diaSelTexto}…`}
                 value={nuevoTexto} onChange={(e) => setNuevoTexto(e.target.value)} />
-              <button className="btn-primario" type="submit" disabled={guardando}>
-                {guardando ? '…' : '+ Apuntar'}
-              </button>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                <select className="campo" style={{ flex: 1, minWidth: 160 }}
+                  value={nuevoEncargoId} onChange={(e) => setNuevoEncargoId(e.target.value)}>
+                  <option value="">— Sin oportunidad —</option>
+                  {encargos.map((en) => (
+                    <option key={en.id} value={en.id}>{en.producto || 'Oportunidad'}{en.empresas?.nombre ? ` · ${en.empresas.nombre}` : ''}</option>
+                  ))}
+                </select>
+                <button className="btn-primario" type="submit" disabled={guardando}>
+                  {guardando ? '…' : '+ Apuntar'}
+                </button>
+              </div>
             </form>
             <p className="placeholder" style={{ fontSize: '0.8rem', marginTop: '0.5rem', marginBottom: 0 }}>
               🔔 Si das permiso de notificaciones, te avisará en el móvil ese día.

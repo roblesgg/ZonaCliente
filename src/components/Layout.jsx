@@ -53,8 +53,12 @@ export default function Layout({ onLogout }) {
 
   return (
     <div className="app">
-      {/* Encabezado superior (marca + buscador + salir) */}
+      {/* Encabezado superior (atrás + marca + buscador + salir) */}
       <header className="topbar">
+        {location.pathname !== '/' && (
+          <button className="topbar-icono" onClick={() => navigate(-1)} title="Atrás" aria-label="Atrás"
+            style={{ fontSize: '1.5rem', lineHeight: 1 }}>‹</button>
+        )}
         <div className="topbar-marca" onClick={() => navigate('/')}>
           <img src="/swirl.png" alt="" width="26" height="26" />
           <span>Zona <b>Cliente</b></span>

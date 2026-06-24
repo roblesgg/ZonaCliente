@@ -122,15 +122,17 @@ create table oportunidad_personas (
 );
 
 -- -------------------------------------------------------------
--- 7) OFERTAS de proveedores (empresas) para comparar precios
+-- 7) OFERTAS: quién la hace (de_persona) y para quién (para_persona)
 -- -------------------------------------------------------------
 create table ofertas (
-  id           uuid primary key default gen_random_uuid(),
-  encargo_id   uuid not null references encargos(id) on delete cascade,
-  empresa_id   uuid references empresas(id) on delete set null,
-  precio       numeric(12,2),
-  notas        text,
-  creado_en    timestamptz not null default now()
+  id              uuid primary key default gen_random_uuid(),
+  encargo_id      uuid not null references encargos(id) on delete cascade,
+  de_persona_id   uuid references personas(id) on delete set null,
+  para_persona_id uuid references personas(id) on delete set null,
+  empresa_id      uuid references empresas(id) on delete set null,  -- (heredado, sin uso)
+  precio          numeric(12,2),
+  notas           text,
+  creado_en       timestamptz not null default now()
 );
 
 -- -------------------------------------------------------------
@@ -153,9 +155,11 @@ create table notas (
 create table if not exists tareas (
   id           uuid primary key default gen_random_uuid(),
   encargo_id   uuid references encargos(id) on delete cascade,
+  persona_id   uuid references personas(id) on delete set null,  -- persona asociada
   texto        text not null,
   fecha_limite date,
-  hora         time,
+  hora         time,                          -- si es null = todo el día
+  aviso_min    integer not null default 0,    -- minutos antes para avisar
   completada   boolean not null default false,
   creado_en    timestamptz not null default now()
 );

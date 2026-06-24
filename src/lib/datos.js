@@ -219,7 +219,7 @@ export async function quitarPersonaDeOportunidad(id) {
 export async function listarOfertasDeEncargo(encargoId) {
   const { data, error } = await supabase
     .from('ofertas')
-    .select('*, empresas(nombre)')
+    .select('*, de_persona:personas!de_persona_id(nombre), para_persona:personas!para_persona_id(nombre)')
     .eq('encargo_id', encargoId)
     .order('precio', { ascending: true })
   if (error) throw error
@@ -276,7 +276,7 @@ export async function listarRecordatorios() {
 
 export async function listarTareasDeEncargo(encargoId) {
   const { data, error } = await supabase
-    .from('tareas').select('*').eq('encargo_id', encargoId)
+    .from('tareas').select('*, personas(nombre, tipo)').eq('encargo_id', encargoId)
     .order('completada', { ascending: true })
     .order('fecha_limite', { ascending: true, nullsFirst: false })
   if (error) throw error
@@ -305,7 +305,7 @@ export async function borrarTarea(id) {
 export async function listarTareasPendientes() {
   const { data, error } = await supabase
     .from('tareas')
-    .select('*, encargos(producto, fase)')
+    .select('*, personas(nombre), encargos(producto, fase, empresas(nombre))')
     .eq('completada', false)
     .order('fecha_limite', { ascending: true, nullsFirst: false })
   if (error) throw error

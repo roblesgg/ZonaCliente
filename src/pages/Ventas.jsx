@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabaseConfigurado } from '../lib/supabase.js'
 import {
-  listarEncargos, crearEncargo, actualizarEncargo, borrarEncargo, listarEmpresas, crearNota,
+  listarEncargos, crearEncargo, actualizarEncargo, borrarEncargo, listarEmpresas,
 } from '../lib/datos.js'
 import { FASES, indiceFase } from '../lib/fases.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
@@ -30,8 +30,7 @@ export default function Ventas() {
   const [guardando, setGuardando] = useState(false)
 
   async function cargar() {
-    setCargando(true)
-    setError(null)
+    setError(null) // sin "Cargando…" en recargas: no salta el scroll
     try {
       const [encs, emps] = await Promise.all([listarEncargos(), listarEmpresas()])
       setEncargos(encs)
@@ -85,7 +84,6 @@ export default function Ventas() {
     setEncargos((prev) => prev.map((e) => (e.id === encargo.id ? { ...e, fase: destino.v } : e)))
     try {
       await actualizarEncargo(encargo.id, { fase: destino.v })
-      await crearNota({ encargo_id: encargo.id, tipo: 'estado', texto: `Pasó a "${destino.tLargo}"` })
     } catch (e) {
       setError(e.message)
       await cargar()

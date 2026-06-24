@@ -37,8 +37,7 @@ export default function App() {
       try {
         const noti = await import('./lib/notificaciones.js')
         await noti.pedirPermisoNotificaciones()
-        const { listarRecordatorios } = await import('./lib/datos.js')
-        await noti.sincronizarRecordatorios(await listarRecordatorios())
+        await noti.reprogramarTodo()
       } catch (e) {
         console.warn('Notificaciones no disponibles', e)
       }

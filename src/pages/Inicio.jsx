@@ -125,10 +125,14 @@ export default function Inicio() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {tareasPend.map((t) => (
                 <Link key={t.id} to={t.encargo_id ? `/encargos/${t.encargo_id}` : '#'}
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
                   <span>
                     {t.texto}
-                    {t.encargos?.producto && <span className="placeholder"> · {t.encargos.producto}</span>}
+                    {(t.encargos?.producto || t.encargos?.empresas?.nombre) && (
+                      <span className="placeholder" style={{ display: 'block', fontSize: '0.8rem' }}>
+                        {[t.encargos?.producto, t.encargos?.empresas?.nombre].filter(Boolean).join(' · ')}
+                      </span>
+                    )}
                   </span>
                   {t.etiqueta && (
                     <span className="badge" style={{ flex: 'none',

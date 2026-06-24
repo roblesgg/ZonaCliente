@@ -22,8 +22,7 @@ export default function Empresas() {
   const [guardando, setGuardando] = useState(false)
 
   async function cargar() {
-    setCargando(true)
-    setError(null)
+    setError(null) // sin "Cargando…" en recargas: no salta el scroll
     try {
       setEmpresas(await listarEmpresas())
     } catch (e) {

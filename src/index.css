@@ -103,6 +103,21 @@ button {
   color: var(--azul);
 }
 
+.topbar-icono {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem 0.45rem;
+  border-radius: 10px;
+  color: var(--texto);
+  flex: none;
+}
+
+.topbar-icono:hover {
+  background: var(--gris-panel);
+}
+
 .topbar-buscar {
   flex: 1;
   max-width: 440px;
@@ -582,6 +597,36 @@ a.kpis:hover .kpi {
 .btn-sec-claro:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+/* ====== Modal / popup ====== */
+.modal-fondo {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+.modal-caja {
+  background: var(--blanco);
+  border-radius: 16px;
+  padding: 1.25rem;
+  width: 100%;
+  max-width: 520px;
+  margin: auto;
+  box-shadow: var(--sombra-md);
+}
+
+.modal-cab {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
 }
 
 .btn-icono {

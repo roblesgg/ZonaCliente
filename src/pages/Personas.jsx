@@ -27,8 +27,7 @@ export default function Personas({ tipo }) {
   const [guardando, setGuardando] = useState(false)
 
   async function cargar() {
-    setCargando(true)
-    setError(null)
+    setError(null) // sin "Cargando…" en recargas: no salta el scroll
     try {
       const [pers, emps] = await Promise.all([listarPersonas(tipo), listarEmpresas()])
       setPersonas(pers)
