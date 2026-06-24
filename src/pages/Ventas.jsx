@@ -12,9 +12,10 @@ import { FASES, indiceFase } from '../lib/fases.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 import SelectorEmpresa from '../components/SelectorEmpresa.jsx'
 import { CampoMoneda, CampoPorcentaje } from '../components/CamposNumero.jsx'
+import { useBorrador } from '../lib/useBorrador.js'
 
 const FORM_VACIO = {
-  producto: '', empresa_id: '', fase: 'oportunidad', fecha_limite: '', ingresos_totales: '', comision_porcentaje: '',
+  producto: '', empresa_id: '', fase: 'oportunidad', descripcion: '', ingresos_totales: '', comision_porcentaje: '',
 }
 
 const eur = (n) => Number(n || 0).toLocaleString('es-ES')
@@ -24,7 +25,7 @@ export default function Ventas() {
   const [empresas, setEmpresas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
-  const [form, setForm] = useState(FORM_VACIO)
+  const [form, setForm, limpiarForm] = useBorrador('borrador-oportunidad', FORM_VACIO)
   const [mostrarForm, setMostrarForm] = useState(false)
   const [guardando, setGuardando] = useState(false)
 
@@ -60,12 +61,12 @@ export default function Ventas() {
         producto: form.producto,
         empresa_id: form.empresa_id || null,
         fase: form.fase,
-        fecha_limite: form.fecha_limite || null,
+        descripcion: form.descripcion || null,
         ingresos_totales: ingresos,
         comision_porcentaje: porcentaje,
         comision_esperada: comision,
       })
-      setForm(FORM_VACIO)
+      limpiarForm()
       setMostrarForm(false)
       await cargar()
     } catch (e) {
@@ -134,13 +135,14 @@ export default function Ventas() {
               onChange={(e) => setForm({ ...form, fase: e.target.value })}>
               {FASES.map((f) => <option key={f.v} value={f.v}>{f.tLargo}</option>)}
             </select>
-            <input className="campo" type="date" value={form.fecha_limite}
-              onChange={(e) => setForm({ ...form, fecha_limite: e.target.value })} />
             <CampoMoneda value={form.ingresos_totales} placeholder="Ingresos totales (€)"
               onChange={(v) => setForm({ ...form, ingresos_totales: v })} />
             <CampoPorcentaje value={form.comision_porcentaje} placeholder="Comisión (%)"
               onChange={(v) => setForm({ ...form, comision_porcentaje: v })} />
           </div>
+
+          <textarea className="campo" rows={2} placeholder="Descripción (opcional)" style={{ marginTop: '0.6rem' }}
+            value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
 
           <div style={{ marginTop: '0.6rem' }}>
             <label className="placeholder" style={{ fontSize: '0.8rem' }}>Empresa (cliente)</label>
@@ -155,11 +157,14 @@ export default function Ventas() {
             </p>
           )}
           <p className="placeholder" style={{ margin: '0.5rem 0 0', fontSize: '0.85rem' }}>
-            Luego, en la ficha, podrás añadir productos y los contactos involucrados.
+            Luego, en la ficha, podrás añadir productos, contactos y tareas.
           </p>
-          <button className="btn-primario" type="submit" disabled={guardando} style={{ marginTop: '0.75rem' }}>
-            {guardando ? 'Guardando…' : 'Guardar oportunidad'}
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
+            <button className="btn-primario" type="submit" disabled={guardando}>
+              {guardando ? 'Guardando…' : 'Guardar oportunidad'}
+            </button>
+            <button type="button" className="btn-sec-claro" onClick={limpiarForm}>Limpiar</button>
+          </div>
         </form>
       )}
 

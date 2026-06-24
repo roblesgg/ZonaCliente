@@ -12,9 +12,11 @@ export const FASES = [
   { v: 'oferta',      t: 'Oferta',      tLargo: 'Oferta',      c: '#fef3c7', tx: '#b45309', color: '#b45309' },
   { v: 'ganado',      t: 'Ganado',      tLargo: 'Ganado',      c: '#bbf7d0', tx: '#166534', color: '#166534' },
   { v: 'perdido',     t: 'Perdido',     tLargo: 'Perdido',     c: '#fecaca', tx: '#991b1b', color: '#991b1b' },
+  { v: 'incidencia',  t: 'Incidencia',  tLargo: 'Incidencia',  c: '#ffedd5', tx: '#c2410c', color: '#ea580c' },
 ]
 
 // Fases "abiertas" (en curso): todas menos las de cierre.
+// La incidencia se considera activa (es una reapertura para gestionarla).
 export const CERRADAS = ['ganado', 'perdido']
 export const FASES_ABIERTAS = FASES.filter((f) => !CERRADAS.includes(f.v))
 

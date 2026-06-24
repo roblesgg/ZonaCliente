@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { supabaseConfigurado } from '../lib/supabase.js'
 import { listarPersonas, crearPersona, borrarPersona, listarEmpresas } from '../lib/datos.js'
 import { TIPOS_PERSONA, etiquetaTipoEmpresa } from '../lib/constantes.js'
+import { useBorrador } from '../lib/useBorrador.js'
 import AccionesContacto from '../components/AccionesContacto.jsx'
 import CamposExtra from '../components/CamposExtra.jsx'
 import SelectorEmpresa from '../components/SelectorEmpresa.jsx'
@@ -21,7 +22,7 @@ export default function Personas({ tipo }) {
   const [empresas, setEmpresas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
-  const [form, setForm] = useState(vacio())
+  const [form, setForm, limpiarForm] = useBorrador(`borrador-persona-${tipo}`, vacio())
   const [mostrarForm, setMostrarForm] = useState(false)
   const [guardando, setGuardando] = useState(false)
 
@@ -39,11 +40,11 @@ export default function Personas({ tipo }) {
     }
   }
 
-  // Recargar al cambiar de tipo (cuando se reutiliza la misma pantalla).
+  // Recargar al cambiar de tipo. No se vacía el formulario: el borrador
+  // (useBorrador) conserva lo que se estuviera escribiendo de cada tipo.
   useEffect(() => {
     if (supabaseConfigurado) cargar()
     else setCargando(false)
-    setForm(vacio())
     setMostrarForm(false)
   }, [tipo])
 
@@ -80,7 +81,7 @@ export default function Personas({ tipo }) {
         correo: form.correo || null,
         extra: form.extra || {},
       })
-      setForm(vacio())
+      limpiarForm()
       setMostrarForm(false)
       await cargar()
     } catch (e) {
@@ -162,9 +163,12 @@ export default function Personas({ tipo }) {
             <CamposExtra valor={form.extra} onChange={(extra) => setForm({ ...form, extra })} />
           </div>
 
-          <button className="btn-primario" type="submit" disabled={guardando} style={{ marginTop: '0.75rem' }}>
-            {guardando ? 'Guardando…' : `Guardar ${meta.t.toLowerCase()}`}
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
+            <button className="btn-primario" type="submit" disabled={guardando}>
+              {guardando ? 'Guardando…' : `Guardar ${meta.t.toLowerCase()}`}
+            </button>
+            <button type="button" className="btn-sec-claro" onClick={limpiarForm}>Limpiar</button>
+          </div>
         </form>
       )}
 

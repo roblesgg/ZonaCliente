@@ -271,6 +271,48 @@ export async function listarRecordatorios() {
 }
 
 // ---------------------------------------------------------------
+// TAREAS pendientes de una oportunidad (con fecha límite)
+// ---------------------------------------------------------------
+
+export async function listarTareasDeEncargo(encargoId) {
+  const { data, error } = await supabase
+    .from('tareas').select('*').eq('encargo_id', encargoId)
+    .order('completada', { ascending: true })
+    .order('fecha_limite', { ascending: true, nullsFirst: false })
+  if (error) throw error
+  return data
+}
+
+export async function crearTarea(tarea) {
+  const { data, error } = await supabase.from('tareas').insert(tarea).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function actualizarTarea(id, cambios) {
+  const { data, error } = await supabase
+    .from('tareas').update(cambios).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function borrarTarea(id) {
+  const { error } = await supabase.from('tareas').delete().eq('id', id)
+  if (error) throw error
+}
+
+// Tareas pendientes (sin completar) de todas las oportunidades, por vencimiento.
+export async function listarTareasPendientes() {
+  const { data, error } = await supabase
+    .from('tareas')
+    .select('*, encargos(producto, fase)')
+    .eq('completada', false)
+    .order('fecha_limite', { ascending: true, nullsFirst: false })
+  if (error) throw error
+  return data
+}
+
+// ---------------------------------------------------------------
 // AJUSTES (configuración global: % de comisión, etc.)
 // ---------------------------------------------------------------
 

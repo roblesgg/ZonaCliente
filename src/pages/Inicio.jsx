@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabaseConfigurado } from '../lib/supabase.js'
-import { listarEncargos, listarRecordatorios } from '../lib/datos.js'
+import { listarEncargos, listarRecordatorios, listarTareasPendientes } from '../lib/datos.js'
 import { FASES_ABIERTAS } from '../lib/fases.js'
 import GraficoBarras from '../components/GraficoBarras.jsx'
 import SinConfigurar from '../components/SinConfigurar.jsx'
@@ -35,15 +35,19 @@ function saludo() {
 export default function Inicio() {
   const [encargos, setEncargos] = useState([])
   const [recordatorios, setRecordatorios] = useState([])
+  const [tareas, setTareas] = useState([])
   const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
     if (!supabaseConfigurado) { setCargando(false); return }
     ;(async () => {
       try {
-        const [encs, recs] = await Promise.all([listarEncargos(), listarRecordatorios()])
+        const [encs, recs, tars] = await Promise.all([
+          listarEncargos(), listarRecordatorios(), listarTareasPendientes(),
+        ])
         setEncargos(encs)
         setRecordatorios(recs)
+        setTareas(tars)
       } catch (e) {
         console.error(e)
       } finally {
@@ -58,14 +62,13 @@ export default function Inicio() {
   const abiertos = encargos.filter((e) => ABIERTAS.includes(e.fase))
   const ganados = encargos.filter((e) => e.fase === 'ganado')
 
-  // Avisos: encargos con fecha límite hoy, pasada o en los próximos 3 días.
-  const avisos = abiertos
-    .filter((e) => e.fecha_limite && diasHasta(e.fecha_limite) <= 3)
-    .map((e) => {
-      const d = diasHasta(e.fecha_limite)
-      const txt = d < 0 ? `vencido hace ${-d} día(s)` : d === 0 ? 'vence hoy' : `vence en ${d} día(s)`
-      return { texto: `${e.producto} — ${txt}`, urgente: d <= 0 }
-    })
+  // Tareas pendientes ordenadas por vencimiento (las sin fecha, al final).
+  const tareasPend = tareas.map((t) => {
+    const d = t.fecha_limite ? diasHasta(t.fecha_limite) : null
+    const etiqueta = d == null ? null
+      : d < 0 ? `vencida hace ${-d} día(s)` : d === 0 ? 'vence hoy' : `vence en ${d} día(s)`
+    return { ...t, d, etiqueta, urgente: d != null && d <= 0 }
+  })
 
   // Tareas de hoy: recordatorios cuya fecha es hoy.
   const hoy = hoyISO()
@@ -115,29 +118,37 @@ export default function Inicio() {
 
       <div className="grid">
         <section className="tarjeta">
-          <h3>📌 Tareas de hoy</h3>
+          <h3>✅ Tareas pendientes</h3>
+          {tareasPend.length === 0 ? (
+            <p className="placeholder">No hay tareas pendientes. 👍</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {tareasPend.map((t) => (
+                <Link key={t.id} to={t.encargo_id ? `/encargos/${t.encargo_id}` : '#'}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                  <span>
+                    {t.texto}
+                    {t.encargos?.producto && <span className="placeholder"> · {t.encargos.producto}</span>}
+                  </span>
+                  {t.etiqueta && (
+                    <span className="badge" style={{ flex: 'none',
+                      background: t.urgente ? '#fee2e2' : '#fef3c7',
+                      color: t.urgente ? 'var(--rojo)' : 'var(--ambar)' }}>{t.etiqueta}</span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="tarjeta">
+          <h3>📌 Recordatorios de hoy</h3>
           {tareasHoy.length === 0 ? (
             <p className="placeholder">No tienes recordatorios para hoy.</p>
           ) : (
             <ul style={{ margin: 0, paddingLeft: '1.1rem' }}>
               {tareasHoy.map((t, i) => <li key={i} style={{ marginBottom: '0.4rem' }}>{t}</li>)}
             </ul>
-          )}
-        </section>
-
-        <section className="tarjeta">
-          <h3>🔔 Avisos</h3>
-          {avisos.length === 0 ? (
-            <p className="placeholder">Nada urgente. 👍</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {avisos.map((a, i) => (
-                <span key={i} className="badge" style={{
-                  background: a.urgente ? '#fee2e2' : '#fef3c7',
-                  color: a.urgente ? 'var(--rojo)' : 'var(--ambar)', width: 'fit-content',
-                }}>{a.texto}</span>
-              ))}
-            </div>
           )}
         </section>
       </div>

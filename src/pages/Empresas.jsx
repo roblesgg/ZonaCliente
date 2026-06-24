@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { supabaseConfigurado } from '../lib/supabase.js'
 import { listarEmpresas, crearEmpresa, borrarEmpresa } from '../lib/datos.js'
 import { TIPOS_EMPRESA, etiquetaTipoEmpresa } from '../lib/constantes.js'
+import { useBorrador } from '../lib/useBorrador.js'
 import CamposExtra from '../components/CamposExtra.jsx'
 
 const FORM_VACIO = {
@@ -16,7 +17,7 @@ export default function Empresas() {
   const [empresas, setEmpresas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
-  const [form, setForm] = useState(FORM_VACIO)
+  const [form, setForm, limpiarForm] = useBorrador('borrador-empresa', FORM_VACIO)
   const [mostrarForm, setMostrarForm] = useState(false)
   const [guardando, setGuardando] = useState(false)
 
@@ -53,7 +54,7 @@ export default function Empresas() {
         notas: form.notas || null,
         extra: form.extra || {},
       })
-      setForm(FORM_VACIO)
+      limpiarForm()
       setMostrarForm(false)
       await cargar()
     } catch (e) {
@@ -118,9 +119,12 @@ export default function Empresas() {
           <div style={{ marginTop: '0.6rem' }}>
             <CamposExtra valor={form.extra} onChange={(extra) => setForm({ ...form, extra })} />
           </div>
-          <button className="btn-primario" type="submit" disabled={guardando} style={{ marginTop: '0.75rem' }}>
-            {guardando ? 'Guardando…' : 'Guardar empresa'}
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
+            <button className="btn-primario" type="submit" disabled={guardando}>
+              {guardando ? 'Guardando…' : 'Guardar empresa'}
+            </button>
+            <button type="button" className="btn-sec-claro" onClick={limpiarForm}>Limpiar</button>
+          </div>
         </form>
       )}
 

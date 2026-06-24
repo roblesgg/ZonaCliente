@@ -148,6 +148,19 @@ create table notas (
 );
 
 -- -------------------------------------------------------------
+-- 8b) TAREAS pendientes de una oportunidad (con fecha límite)
+-- -------------------------------------------------------------
+create table if not exists tareas (
+  id           uuid primary key default gen_random_uuid(),
+  encargo_id   uuid references encargos(id) on delete cascade,
+  texto        text not null,
+  fecha_limite date,
+  hora         time,
+  completada   boolean not null default false,
+  creado_en    timestamptz not null default now()
+);
+
+-- -------------------------------------------------------------
 -- 9) AJUSTES globales (una sola fila): % de comisión, etc.
 -- -------------------------------------------------------------
 create table ajustes (
@@ -179,7 +192,7 @@ declare
   t text;
   tablas text[] := array[
     'empresas', 'personas', 'productos', 'encargos',
-    'oportunidad_productos', 'oportunidad_personas', 'ofertas', 'notas', 'ajustes'
+    'oportunidad_productos', 'oportunidad_personas', 'ofertas', 'notas', 'tareas', 'ajustes'
   ];
 begin
   foreach t in array tablas loop

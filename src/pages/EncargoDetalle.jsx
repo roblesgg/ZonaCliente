@@ -3,7 +3,7 @@
 // involucradas (varias), ofertas de proveedores, campos personalizados y notas
 // de seguimiento con recordatorios.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabaseConfigurado } from '../lib/supabase.js'
 import {
@@ -14,6 +14,7 @@ import {
   listarProductosDeOportunidad, añadirProductoAOportunidad, actualizarLineaProducto, quitarProductoDeOportunidad,
   listarPersonas, listarPersonasDeOportunidad, añadirPersonaAOportunidad, quitarPersonaDeOportunidad,
   actualizarDescripcionInvolucrado, listarRecordatorios,
+  listarTareasDeEncargo, crearTarea, actualizarTarea, borrarTarea,
 } from '../lib/datos.js'
 import { sincronizarRecordatorios } from '../lib/notificaciones.js'
 import { FASES, faseInfo } from '../lib/fases.js'
@@ -34,14 +35,17 @@ export default function EncargoDetalle() {
   const [catalogo, setCatalogo] = useState([])
   const [ofertas, setOfertas] = useState([])
   const [notas, setNotas] = useState([])
+  const [tareas, setTareas] = useState([])
   const [empresas, setEmpresas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
 
-  // Edición de datos principales
+  // Edición de datos principales (autoguardado, sin botón)
   const [datos, setDatos] = useState({ producto: '', empresa_id: '', descripcion: '', fase: 'oportunidad', ingresos_totales: '', comision_porcentaje: '', comision_esperada: '', extra: {} })
   const [guardando, setGuardando] = useState(false)
   const [guardado, setGuardado] = useState(false)
+  const saltarAutosave = useRef(true)
+  const guardarTimer = useRef(null)
 
   // Formularios auxiliares
   const [nuevaLinea, setNuevaLinea] = useState({ producto_id: '', cantidad: 1 })
@@ -50,6 +54,7 @@ export default function EncargoDetalle() {
   const [descr, setDescr] = useState({})   // descripción en edición por involucrado
   const [oferta, setOferta] = useState({ empresa_id: '', precio: '', notas: '' })
   const [nota, setNota] = useState({ tipo: 'nota', texto: '', recordatorio: '', recordatorio_hora: '', aviso_min: 0 })
+  const [nuevaTarea, setNuevaTarea] = useState({ texto: '', fecha_limite: '' })
 
   // Reprograma los avisos del móvil tras tocar recordatorios.
   async function reprogramarAvisos() {
@@ -59,13 +64,14 @@ export default function EncargoDetalle() {
   async function cargar() {
     setCargando(true); setError(null)
     try {
-      const [enc, lin, inv, ofs, nts, emps, cat, pers] = await Promise.all([
+      const [enc, lin, inv, ofs, nts, emps, cat, pers, trs] = await Promise.all([
         obtenerEncargo(id), listarProductosDeOportunidad(id), listarPersonasDeOportunidad(id),
         listarOfertasDeEncargo(id), listarNotasDeEncargo(id), listarEmpresas(),
-        listarProductos(), listarPersonas(),
+        listarProductos(), listarPersonas(), listarTareasDeEncargo(id),
       ])
       setEncargo(enc); setLineas(lin); setInvolucrados(inv)
-      setOfertas(ofs); setNotas(nts); setEmpresas(emps); setCatalogo(cat); setPersonas(pers)
+      setOfertas(ofs); setNotas(nts); setEmpresas(emps); setCatalogo(cat); setPersonas(pers); setTareas(trs)
+      saltarAutosave.current = true // no autoguardar por culpa de esta recarga
       setDatos({
         producto: enc.producto || '', empresa_id: enc.empresa_id || '',
         descripcion: enc.descripcion || '', fase: enc.fase || 'oportunidad',
@@ -100,9 +106,9 @@ export default function EncargoDetalle() {
     setDatos((d) => ({ ...d, comision_porcentaje: v, comision_esperada: comisionDe(d.ingresos_totales, v) || d.comision_esperada }))
   }
 
-  async function guardarDatos(e) {
-    e?.preventDefault()
-    setGuardando(true); setError(null); setGuardado(false)
+  // Autoguardado: guarda los datos principales sin botón (no recarga).
+  async function guardarDatos() {
+    setGuardando(true); setError(null)
     try {
       await actualizarEncargo(id, {
         producto: datos.producto || null,
@@ -114,18 +120,53 @@ export default function EncargoDetalle() {
         comision_esperada: datos.comision_esperada === '' ? null : Number(datos.comision_esperada),
         extra: datos.extra || {},
       })
-      // Si cambió el estado, lo deja registrado en el historial.
-      if (encargo.fase !== datos.fase) {
-        await crearNota({ encargo_id: id, tipo: 'estado', texto: `Pasó a "${faseInfo(datos.fase).tLargo}"` })
-      }
       setGuardado(true)
-      await cargar()
     } catch (e) { setError(e.message) }
     finally { setGuardando(false) }
   }
 
-  async function añadirLinea(e) {
+  // Cada cambio en los datos dispara un guardado (con un pequeño retardo).
+  useEffect(() => {
+    if (saltarAutosave.current) { saltarAutosave.current = false; return }
+    clearTimeout(guardarTimer.current)
+    guardarTimer.current = setTimeout(guardarDatos, 700)
+    return () => clearTimeout(guardarTimer.current)
+  }, [datos]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // El estado se guarda al instante y queda registrado en el historial.
+  async function cambiarFase(nuevaFase) {
+    const anterior = datos.fase
+    if (nuevaFase === anterior) return
+    saltarAutosave.current = true
+    setDatos((d) => ({ ...d, fase: nuevaFase }))
+    try {
+      await actualizarEncargo(id, { fase: nuevaFase })
+      await crearNota({ encargo_id: id, tipo: 'estado', texto: `Pasó a "${faseInfo(nuevaFase).tLargo}"` })
+      setNotas(await listarNotasDeEncargo(id))
+      setEncargo((prev) => (prev ? { ...prev, fase: nuevaFase } : prev))
+    } catch (e) { setError(e.message) }
+  }
+
+  // --- Tareas pendientes ---
+  async function añadirTarea(e) {
     e.preventDefault()
+    if (!nuevaTarea.texto.trim()) return
+    try {
+      await crearTarea({ encargo_id: id, texto: nuevaTarea.texto.trim(), fecha_limite: nuevaTarea.fecha_limite || null })
+      setNuevaTarea({ texto: '', fecha_limite: '' })
+      setTareas(await listarTareasDeEncargo(id))
+    } catch (e) { setError(e.message) }
+  }
+  async function alternarTarea(t) {
+    try { await actualizarTarea(t.id, { completada: !t.completada }); setTareas(await listarTareasDeEncargo(id)) }
+    catch (e) { setError(e.message) }
+  }
+  async function quitarTarea(tid) {
+    try { await borrarTarea(tid); setTareas(await listarTareasDeEncargo(id)) }
+    catch (e) { setError(e.message) }
+  }
+
+  async function añadirLinea() {
     if (!nuevaLinea.producto_id) return
     try {
       await añadirProductoAOportunidad({
@@ -137,8 +178,7 @@ export default function EncargoDetalle() {
     } catch (e) { setError(e.message) }
   }
 
-  async function crearYAñadir(e) {
-    e.preventDefault()
+  async function crearYAñadir() {
     const nombre = productoRapido.trim()
     if (!nombre) return
     try {
@@ -205,6 +245,7 @@ export default function EncargoDetalle() {
   const f = faseInfo(datos.fase)
   const precioMin = Math.min(...ofertas.filter((o) => o.precio != null).map((o) => Number(o.precio)))
   const idsInvolucrados = involucrados.map((x) => x.persona_id)
+  const hoyStr = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD local
 
   return (
     <>
@@ -226,14 +267,19 @@ export default function EncargoDetalle() {
         </div>
       )}
 
-      {/* Datos e ingresos */}
-      <form className="tarjeta" style={{ marginTop: '1rem' }} onSubmit={guardarDatos}>
-        <h3>📝 Datos de la oportunidad</h3>
-        <div className="campos">
+      {/* Datos e ingresos (autoguardado) */}
+      <section className="tarjeta" style={{ marginTop: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ margin: 0 }}>📝 Datos de la oportunidad</h3>
+          <span className="placeholder" style={{ fontSize: '0.78rem' }}>
+            {guardando ? 'Guardando…' : guardado ? '✓ Guardado' : ''}
+          </span>
+        </div>
+        <div className="campos" style={{ marginTop: '0.75rem' }}>
           <input className="campo" placeholder="Título" value={datos.producto}
             onChange={(e) => setDatos({ ...datos, producto: e.target.value })} />
           <select className="campo" value={datos.fase}
-            onChange={(e) => setDatos({ ...datos, fase: e.target.value })}>
+            onChange={(e) => cambiarFase(e.target.value)}>
             {FASES.map((x) => <option key={x.v} value={x.v}>{x.tLargo}</option>)}
           </select>
         </div>
@@ -266,14 +312,7 @@ export default function EncargoDetalle() {
         <div style={{ marginTop: '0.75rem' }}>
           <CamposExtra valor={datos.extra} onChange={(extra) => setDatos({ ...datos, extra })} />
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.75rem' }}>
-          <button className="btn-primario" type="submit" disabled={guardando}>
-            {guardando ? 'Guardando…' : 'Guardar cambios'}
-          </button>
-          {guardado && <span style={{ color: 'var(--verde)', fontWeight: 600 }}>✓ Guardado</span>}
-        </div>
-      </form>
+      </section>
 
       {/* Productos */}
       <section className="tarjeta" style={{ marginTop: '1rem' }}>
@@ -304,7 +343,7 @@ export default function EncargoDetalle() {
           </div>
         )}
 
-        <form onSubmit={añadirLinea} style={{ marginTop: '0.75rem', borderTop: '1px solid var(--borde)', paddingTop: '0.75rem' }}>
+        <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--borde)', paddingTop: '0.75rem' }}>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <select className="campo" value={nuevaLinea.producto_id} style={{ flex: 1, minWidth: 160 }}
               onChange={(e) => setNuevaLinea({ ...nuevaLinea, producto_id: e.target.value })}>
@@ -313,15 +352,59 @@ export default function EncargoDetalle() {
             </select>
             <input className="campo" type="number" min="1" value={nuevaLinea.cantidad} style={{ width: 80 }}
               onChange={(e) => setNuevaLinea({ ...nuevaLinea, cantidad: e.target.value })} />
-            <button className="btn-primario" type="submit">+ Añadir</button>
+            <button className="btn-primario" type="button" onClick={añadirLinea}>+ Añadir</button>
           </div>
-        </form>
+        </div>
 
-        <form onSubmit={crearYAñadir} style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <input className="campo" placeholder="…o crea uno nuevo y añádelo" value={productoRapido}
-            onChange={(e) => setProductoRapido(e.target.value)} style={{ flex: 1, minWidth: 160 }} />
-          <button className="btn-sec-claro" type="submit">+ Crear y añadir</button>
-        </form>
+            onChange={(e) => setProductoRapido(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); crearYAñadir() } }}
+            style={{ flex: 1, minWidth: 160 }} />
+          <button className="btn-sec-claro" type="button" onClick={crearYAñadir}>+ Crear y añadir</button>
+        </div>
+      </section>
+
+      {/* Tareas pendientes */}
+      <section className="tarjeta" style={{ marginTop: '1rem' }}>
+        <h3>✅ Tareas</h3>
+        {tareas.length === 0 ? (
+          <p className="placeholder">Sin tareas. Añade abajo lo que haya que hacer.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            {tareas.map((t) => {
+              const vencida = !t.completada && t.fecha_limite && t.fecha_limite < hoyStr
+              return (
+                <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem',
+                  padding: '0.4rem 0.6rem', background: 'var(--fondo)', borderRadius: 'var(--radio)' }}>
+                  <input type="checkbox" checked={t.completada} onChange={() => alternarTarea(t)}
+                    style={{ width: 18, height: 18, flex: 'none' }} />
+                  <span style={{ flex: 1, textDecoration: t.completada ? 'line-through' : 'none',
+                    color: t.completada ? 'var(--texto-suave)' : 'inherit' }}>
+                    {t.texto}
+                    {t.fecha_limite && (
+                      <span className="badge" style={{ marginLeft: '0.5rem',
+                        background: vencida ? '#fee2e2' : '#fef3c7', color: vencida ? 'var(--rojo)' : 'var(--ambar)' }}>
+                        📅 {t.fecha_limite}
+                      </span>
+                    )}
+                  </span>
+                  <button className="btn-icono" title="Borrar" onClick={() => quitarTarea(t.id)}>🗑️</button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+        <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--borde)', paddingTop: '0.75rem',
+          display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <input className="campo" placeholder="Nueva tarea…" value={nuevaTarea.texto} style={{ flex: 1, minWidth: 160 }}
+            onChange={(e) => setNuevaTarea({ ...nuevaTarea, texto: e.target.value })}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); añadirTarea(e) } }} />
+          <input className="campo" type="date" style={{ width: 'auto' }} value={nuevaTarea.fecha_limite}
+            title="Fecha límite (opcional)"
+            onChange={(e) => setNuevaTarea({ ...nuevaTarea, fecha_limite: e.target.value })} />
+          <button className="btn-primario" type="button" onClick={añadirTarea}>+ Tarea</button>
+        </div>
       </section>
 
       {/* Personas involucradas, agrupadas por tipo (clientes / socios / proveedores) */}
