@@ -313,7 +313,36 @@ export async function listarTareasPendientes() {
 }
 
 // ---------------------------------------------------------------
-// AJUSTES (configuración global: % de comisión, etc.)
+// AVISOS (historial): recordatorios (notas) + tareas con fecha, unidos
+// ---------------------------------------------------------------
+
+export async function listarAvisos() {
+  const [rNotas, rTareas] = await Promise.all([
+    supabase.from('notas')
+      .select('id, texto, recordatorio, recordatorio_hora, encargo_id, encargos(producto, empresas(nombre))')
+      .not('recordatorio', 'is', null),
+    supabase.from('tareas')
+      .select('id, texto, fecha_limite, hora, completada, encargo_id, encargos(producto, empresas(nombre))')
+      .not('fecha_limite', 'is', null),
+  ])
+  if (rNotas.error) throw rNotas.error
+  if (rTareas.error) throw rTareas.error
+
+  const ts = (fecha, hora) => new Date(`${fecha}T${(hora || '09:00').slice(0, 5)}:00`).getTime()
+  const items = []
+  for (const n of rNotas.data || []) {
+    items.push({ key: 'n' + n.id, tipo: 'recordatorio', texto: n.texto, fecha: n.recordatorio, hora: n.recordatorio_hora,
+      encargo_id: n.encargo_id, encargo: n.encargos, completada: null, ts: ts(n.recordatorio, n.recordatorio_hora) })
+  }
+  for (const t of rTareas.data || []) {
+    items.push({ key: 't' + t.id, tipo: 'tarea', texto: t.texto, fecha: t.fecha_limite, hora: t.hora,
+      encargo_id: t.encargo_id, encargo: t.encargos, completada: t.completada, ts: ts(t.fecha_limite, t.hora) })
+  }
+  return items
+}
+
+// ---------------------------------------------------------------
+// AJUSTES (configuración del usuario)
 // ---------------------------------------------------------------
 
 export async function obtenerAjustes() {

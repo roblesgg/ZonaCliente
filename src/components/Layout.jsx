@@ -69,6 +69,7 @@ export default function Layout({ onLogout }) {
           <span className="ph">Buscar empresa, persona, oportunidad…</span>
         </button>
 
+        <button className="topbar-icono" onClick={() => navigate('/avisos')} title="Avisos">🔔</button>
         <button className="topbar-icono" onClick={() => navigate('/ajustes')} title="Ajustes">⚙️</button>
 
         {onLogout && (
