@@ -168,12 +168,10 @@ create table if not exists tareas (
 -- 9) AJUSTES globales (una sola fila): % de comisión, etc.
 -- -------------------------------------------------------------
 create table ajustes (
-  id                   int primary key default 1,
-  nombre               text,
-  extra                jsonb not null default '{}'::jsonb,
-  constraint ajustes_una_fila check (id = 1)
+  user_id uuid primary key default auth.uid() references auth.users(id) on delete cascade,
+  nombre  text,
+  extra   jsonb not null default '{}'::jsonb
 );
-insert into ajustes (id) values (1) on conflict (id) do nothing;
 
 -- -------------------------------------------------------------
 -- 10) Índices
@@ -189,22 +187,26 @@ create index if not exists idx_ofertas_encargo     on ofertas(encargo_id);
 create index if not exists idx_notas_encargo       on notas(encargo_id);
 
 -- -------------------------------------------------------------
--- 11) Seguridad (RLS): solo usuarios con sesión iniciada
+-- 11) Seguridad (RLS) por usuario: cada fila pertenece a quien la crea
+--     (user_id = auth.uid()) y SOLO su dueño la ve/edita. Así cada cuenta
+--     tiene su propio CRM y no se cruzan datos entre usuarios.
 -- -------------------------------------------------------------
 do $$
 declare
   t text;
-  tablas text[] := array[
-    'empresas', 'personas', 'productos', 'encargos',
-    'oportunidad_productos', 'oportunidad_personas', 'ofertas', 'notas', 'tareas', 'ajustes'
-  ];
+  datos text[] := array['empresas','personas','productos','encargos','oportunidad_productos','oportunidad_personas','ofertas','notas','tareas'];
+  todas text[] := array['empresas','personas','productos','encargos','oportunidad_productos','oportunidad_personas','ofertas','notas','tareas','ajustes'];
 begin
-  foreach t in array tablas loop
+  -- Columna de propietario en las tablas de datos (ajustes ya la tiene).
+  foreach t in array datos loop
+    execute format('alter table %I add column if not exists user_id uuid not null references auth.users(id) on delete cascade default auth.uid();', t);
+    execute format('create index if not exists idx_%I_user on %I(user_id);', t, t);
+  end loop;
+  -- Política: solo las filas propias.
+  foreach t in array todas loop
     execute format('alter table %I enable row level security;', t);
     execute format('drop policy if exists "acceso_autenticado" on %I;', t);
-    execute format(
-      'create policy "acceso_autenticado" on %I for all to authenticated using (true) with check (true);',
-      t
-    );
+    execute format('drop policy if exists "propios" on %I;', t);
+    execute format('create policy "propios" on %I for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());', t);
   end loop;
 end $$;

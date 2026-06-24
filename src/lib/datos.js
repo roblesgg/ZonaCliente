@@ -317,14 +317,16 @@ export async function listarTareasPendientes() {
 // ---------------------------------------------------------------
 
 export async function obtenerAjustes() {
-  const { data, error } = await supabase.from('ajustes').select('*').eq('id', 1).maybeSingle()
+  // Con RLS por usuario, solo es visible la fila propia (0 o 1).
+  const { data, error } = await supabase.from('ajustes').select('*').maybeSingle()
   if (error) throw error
-  return data || { id: 1, nombre: '', extra: {} }
+  return data || { nombre: '', extra: {} }
 }
 
 export async function actualizarAjustes(cambios) {
+  // user_id lo pone el default auth.uid(); upsert por usuario.
   const { data, error } = await supabase
-    .from('ajustes').upsert({ id: 1, ...cambios }).select().single()
+    .from('ajustes').upsert({ ...cambios }, { onConflict: 'user_id' }).select().single()
   if (error) throw error
   return data
 }
