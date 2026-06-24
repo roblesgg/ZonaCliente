@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
+import AvisoActualizacion from './AvisoActualizacion.jsx'
 
 // Navegación reducida a 4 secciones para que sea cómoda y visual.
 // "Buscar" deja de ser una pestaña y pasa al buscador del encabezado.
@@ -93,6 +94,7 @@ export default function Layout({ onLogout }) {
       {/* Contenido */}
       <main className="con-sidebar" onTouchStart={alEmpezar} onTouchEnd={alTerminar}>
         <div className="contenido">
+          <AvisoActualizacion />
           <div className="pagina" key={location.pathname}>
             <Outlet />
           </div>
