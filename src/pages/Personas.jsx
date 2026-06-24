@@ -195,10 +195,11 @@ export default function Personas({ tipo }) {
                 <h3>{p.nombre}</h3>
                 <button className="btn-icono" onClick={(e) => { e.stopPropagation(); eliminar(p.id) }} title="Borrar">🗑️</button>
               </div>
-              {(p.cargo || p.empresas?.nombre) && (
-                <p className="placeholder" style={{ margin: '0 0 0.3rem' }}>
-                  {[p.cargo, p.empresas?.nombre].filter(Boolean).join(' · ')}
-                  {p.empresas?.tipo ? ` (${etiquetaTipoEmpresa(p.empresas.tipo)})` : ''}
+              {p.cargo && <p className="placeholder" style={{ margin: '0 0 0.2rem' }}>{p.cargo}</p>}
+              {p.empresas?.nombre && (
+                <p style={{ margin: '0 0 0.3rem', fontWeight: 600 }}>
+                  🏢 {p.empresas.nombre}
+                  {p.empresas?.tipo ? <span className="placeholder" style={{ fontWeight: 400 }}> · {etiquetaTipoEmpresa(p.empresas.tipo)}</span> : ''}
                 </p>
               )}
               {p.descripcion_cargo && (
