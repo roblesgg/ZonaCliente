@@ -880,6 +880,10 @@ select.campo:disabled {
   box-shadow: none;
 }
 
+.cal-celda.hoy {
+  background: #cfe0ff;
+}
+
 .cal-celda.hoy .cal-numero {
   color: var(--azul);
   font-weight: 800;
