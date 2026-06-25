@@ -79,15 +79,15 @@ export default function Empresas() {
                   <h3>{em.nombre}</h3>
                   <button className="btn-icono" onClick={(e) => { e.stopPropagation(); eliminar(em.id) }} title="Borrar">🗑️</button>
                 </div>
-                <p className="placeholder" style={{ margin: '0 0 0.4rem' }}>
-                  {[etiquetaTipoEmpresa(em.tipo), em.ciudad, em.provincia].filter(Boolean).join(' · ') || 'Empresa'}
-                </p>
-                {em.cif && <p className="placeholder" style={{ margin: '0 0 0.3rem', fontSize: '0.85rem' }}>CIF: {em.cif}</p>}
-                {(em.direccion || maps) && (
-                  <p style={{ margin: '0 0 0.4rem', fontSize: '0.88rem' }}>
-                    {[em.direccion, em.codigo_postal].filter(Boolean).join(', ')}
-                  </p>
-                )}
+                <div style={{ margin: '0.2rem 0 0.5rem', fontSize: '0.9rem', lineHeight: 1.45 }}>
+                  {em.direccion && <div>{em.direccion}</div>}
+                  {em.codigo_postal && <div>{em.codigo_postal}</div>}
+                  {(em.ciudad || em.provincia || em.pais) && (
+                    <div>{[em.ciudad, em.provincia, em.pais].filter(Boolean).join(' - ')}</div>
+                  )}
+                  {em.cif && <div className="placeholder">CIF: {em.cif}</div>}
+                  <div className="placeholder">{etiquetaTipoEmpresa(em.tipo) || 'Empresa'}</div>
+                </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                   {maps && (
                     <a href={maps} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
@@ -95,7 +95,7 @@ export default function Empresas() {
                   )}
                   {em.telefono && (
                     <a href={`tel:${tel(em.telefono)}`} className="badge" onClick={(e) => e.stopPropagation()}
-                       style={{ background: '#dcfce7', color: 'var(--verde)' }}>📞 Llamar</a>
+                       style={{ background: '#dcfce7', color: 'var(--verde)' }}>📞 {em.telefono}</a>
                   )}
                   {em.email && (
                     <a href={`mailto:${em.email}`} className="badge" onClick={(e) => e.stopPropagation()}

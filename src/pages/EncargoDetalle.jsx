@@ -25,6 +25,7 @@ import SelectorPersona from '../components/SelectorPersona.jsx'
 import Desplegable from '../components/Desplegable.jsx'
 import { CampoMoneda, CampoPorcentaje } from '../components/CamposNumero.jsx'
 import Adjuntos from '../components/Adjuntos.jsx'
+import AutoTextarea from '../components/AutoTextarea.jsx'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
 const eur = (n) => Number(n || 0).toLocaleString('es-ES')
@@ -324,7 +325,7 @@ export default function EncargoDetalle() {
             onCreada={() => listarEmpresas().then(setEmpresas)} />
         </div>
 
-        <textarea className="campo" rows={2} placeholder="Descripción" style={{ marginTop: '0.75rem' }}
+        <AutoTextarea placeholder="Descripción" style={{ marginTop: '0.75rem' }}
           value={datos.descripcion} onChange={(e) => setDatos({ ...datos, descripcion: e.target.value })} />
 
         <div className="campos" style={{ marginTop: '0.75rem' }}>
@@ -430,7 +431,7 @@ export default function EncargoDetalle() {
         )}
 
         <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--borde)', paddingTop: '0.75rem' }}>
-          <textarea className="campo" rows={2} placeholder="Nueva tarea…" value={nuevaTarea.texto}
+          <AutoTextarea placeholder="Nueva tarea…" value={nuevaTarea.texto}
             onChange={(e) => setNuevaTarea({ ...nuevaTarea, texto: e.target.value })} />
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap' }}>
             <input className="campo" type="date" style={{ width: 'auto' }} title="Fecha límite (opcional)"
@@ -560,7 +561,7 @@ export default function EncargoDetalle() {
       <section className="tarjeta" style={{ marginTop: '1rem' }}>
         <h3>🗒️ Notas</h3>
         <form onSubmit={añadirNota} style={{ marginBottom: '1rem' }}>
-          <textarea className="campo" rows={2} placeholder="Escribe una nota…"
+          <AutoTextarea placeholder="Escribe una nota…"
             value={nota.texto} onChange={(e) => setNota({ ...nota, texto: e.target.value })} />
 
           {/* Recordatorio opcional con fecha, hora y antelación del aviso */}

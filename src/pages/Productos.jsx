@@ -8,6 +8,7 @@ import { listarProductos, crearProducto, actualizarProducto, borrarProducto } fr
 import CamposExtra from '../components/CamposExtra.jsx'
 import { CampoMoneda } from '../components/CamposNumero.jsx'
 import Adjuntos from '../components/Adjuntos.jsx'
+import AutoTextarea from '../components/AutoTextarea.jsx'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
 const VACIO = { nombre: '', referencia: '', marca: '', descripcion: '', precio: '', extra: {} }
@@ -97,7 +98,7 @@ export default function Productos() {
             <CampoMoneda value={form.precio} placeholder="Precio orientativo (€)"
               onChange={(v) => setForm({ ...form, precio: v })} />
           </div>
-          <textarea className="campo" rows={2} placeholder="Descripción / características"
+          <AutoTextarea placeholder="Descripción / características"
             style={{ marginTop: '0.75rem' }} value={form.descripcion}
             onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
 

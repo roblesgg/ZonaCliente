@@ -12,6 +12,7 @@ import { FASES, indiceFase } from '../lib/fases.js'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 import SelectorEmpresa from '../components/SelectorEmpresa.jsx'
 import Desplegable from '../components/Desplegable.jsx'
+import AutoTextarea from '../components/AutoTextarea.jsx'
 import { CampoMoneda, CampoPorcentaje } from '../components/CamposNumero.jsx'
 import { useBorrador } from '../lib/useBorrador.js'
 
@@ -139,7 +140,7 @@ export default function Ventas() {
               onChange={(v) => setForm({ ...form, comision_porcentaje: v })} />
           </div>
 
-          <textarea className="campo" rows={2} placeholder="Descripción (opcional)" style={{ marginTop: '0.6rem' }}
+          <AutoTextarea placeholder="Descripción (opcional)" style={{ marginTop: '0.6rem' }}
             value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
 
           <div style={{ marginTop: '0.6rem' }}>

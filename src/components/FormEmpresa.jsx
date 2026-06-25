@@ -3,12 +3,13 @@ import { crearEmpresa, actualizarEmpresa } from '../lib/datos.js'
 import { TIPOS_EMPRESA } from '../lib/constantes.js'
 import CamposExtra from './CamposExtra.jsx'
 import Desplegable from './Desplegable.jsx'
+import AutoTextarea from './AutoTextarea.jsx'
 
 const desde = (e) => ({
   nombre: e?.nombre || '', tipo: e?.tipo || 'hospital', cif: e?.cif || '',
-  direccion: e?.direccion || '', ciudad: e?.ciudad || '', provincia: e?.provincia || '',
-  codigo_postal: e?.codigo_postal || '', telefono: e?.telefono || '', email: e?.email || '',
-  notas: e?.notas || '', extra: e?.extra || {},
+  direccion: e?.direccion || '', codigo_postal: e?.codigo_postal || '',
+  ciudad: e?.ciudad || '', provincia: e?.provincia || '', pais: e?.pais || 'España',
+  telefono: e?.telefono || '', email: e?.email || '', notas: e?.notas || '', extra: e?.extra || {},
 })
 
 // Formulario de empresa. Si recibe `inicial` (con id) edita; si no, crea.
@@ -25,8 +26,8 @@ export default function FormEmpresa({ inicial, onGuardada, onCancelar }) {
     try {
       const payload = {
         nombre: form.nombre.trim(), tipo: form.tipo || null, cif: form.cif || null,
-        direccion: form.direccion || null, ciudad: form.ciudad || null,
-        provincia: form.provincia || null, codigo_postal: form.codigo_postal || null,
+        direccion: form.direccion || null, codigo_postal: form.codigo_postal || null,
+        ciudad: form.ciudad || null, provincia: form.provincia || null, pais: form.pais || null,
         telefono: form.telefono || null, email: form.email || null,
         notas: form.notas || null, extra: form.extra || {},
       }
@@ -46,18 +47,20 @@ export default function FormEmpresa({ inicial, onGuardada, onCancelar }) {
           onChange={(e) => setForm({ ...form, cif: e.target.value })} />
         <input className="campo" placeholder="Dirección" value={form.direccion}
           onChange={(e) => setForm({ ...form, direccion: e.target.value })} />
-        <input className="campo" placeholder="Ciudad" value={form.ciudad}
+        <input className="campo" placeholder="Código postal" value={form.codigo_postal}
+          onChange={(e) => setForm({ ...form, codigo_postal: e.target.value })} />
+        <input className="campo" placeholder="Pedanía / Localidad" value={form.ciudad}
           onChange={(e) => setForm({ ...form, ciudad: e.target.value })} />
         <input className="campo" placeholder="Provincia" value={form.provincia}
           onChange={(e) => setForm({ ...form, provincia: e.target.value })} />
-        <input className="campo" placeholder="Código postal" value={form.codigo_postal}
-          onChange={(e) => setForm({ ...form, codigo_postal: e.target.value })} />
+        <input className="campo" placeholder="País" value={form.pais}
+          onChange={(e) => setForm({ ...form, pais: e.target.value })} />
         <input className="campo" placeholder="Teléfono" value={form.telefono}
           onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
         <input className="campo" placeholder="Email" value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })} />
       </div>
-      <textarea className="campo" rows={2} placeholder="Notas" style={{ marginTop: '0.6rem' }}
+      <AutoTextarea placeholder="Notas" style={{ marginTop: '0.6rem' }}
         value={form.notas} onChange={(e) => setForm({ ...form, notas: e.target.value })} />
       <div style={{ marginTop: '0.6rem' }}>
         <CamposExtra valor={form.extra} onChange={(extra) => setForm({ ...form, extra })} />

@@ -42,8 +42,9 @@ create table empresas (
   tipo          text,               -- hospital / clinica / fabrica / proveedor / otro
   cif           text,
   direccion     text,
-  ciudad        text,
+  ciudad        text,               -- pedanía / localidad
   provincia     text,
+  pais          text,
   codigo_postal text,
   telefono      text,
   email         text,
