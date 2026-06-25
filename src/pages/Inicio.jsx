@@ -114,7 +114,7 @@ export default function Inicio() {
       {!hayDatos ? (
         <div className="tarjeta" style={{ marginBottom: '1rem' }}>
           <p className="placeholder" style={{ margin: 0 }}>
-            Aún no hay oportunidades. Crea la primera en la pestaña <Link to="/ventas" style={{ color: 'var(--azul)', fontWeight: 600 }}>Ventas</Link> y
+            Aún no hay oportunidades. Crea la primera en la pestaña <Link to="/ventas" style={{ color: 'var(--azul)', fontWeight: 600 }}>Oportunidades</Link> y
             este panel se irá rellenando solo.
           </p>
         </div>

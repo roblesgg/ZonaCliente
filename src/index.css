@@ -1066,6 +1066,8 @@ a.kpis:hover .kpi {
 
   .bottom-nav .nav-item {
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
     flex-direction: column;
     gap: 0.2rem;
     padding: 0.45rem 0;
@@ -1085,6 +1087,11 @@ a.kpis:hover .kpi {
 
   .bottom-nav .nav-item .etq {
     transition: color 0.2s ease, font-weight 0.2s ease;
+    font-size: 0.62rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .bottom-nav .nav-item.activo {

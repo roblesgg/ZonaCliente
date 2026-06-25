@@ -6,7 +6,7 @@ import AvisoActualizacion from './AvisoActualizacion.jsx'
 // "Buscar" deja de ser una pestaña y pasa al buscador del encabezado.
 const enlaces = [
   { to: '/', icono: '🏠', texto: 'Inicio', end: true },
-  { to: '/ventas', icono: '📊', texto: 'Ventas' },
+  { to: '/ventas', icono: '📊', texto: 'Oportunidades' },
   { to: '/cartera', icono: '👥', texto: 'Cartera' },
   { to: '/productos', icono: '📦', texto: 'Productos' },
   { to: '/agenda', icono: '📅', texto: 'Agenda' },

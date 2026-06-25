@@ -6,13 +6,25 @@ import { listarAdjuntos, subirAdjunto, borrarAdjunto, urlAdjunto } from '../lib/
 
 export default function Adjuntos({ encargoId, productoId }) {
   const [items, setItems] = useState([])
+  const [urls, setUrls] = useState({}) // miniaturas (url firmada) de las imágenes
   const [subiendo, setSubiendo] = useState(false)
   const [error, setError] = useState(null)
   const inputRef = useRef(null)
   const ref = { encargoId, productoId }
 
   async function cargar() {
-    try { setItems(await listarAdjuntos(ref)) } catch (e) { setError(e.message) }
+    try {
+      const list = await listarAdjuntos(ref)
+      setItems(list)
+      // Carga las URLs de las imágenes para mostrar la vista previa.
+      const previews = {}
+      await Promise.all(
+        list.filter((a) => (a.tipo || '').startsWith('image/')).map(async (a) => {
+          try { previews[a.id] = await urlAdjunto(a.ruta) } catch { /* ignore */ }
+        }),
+      )
+      setUrls(previews)
+    } catch (e) { setError(e.message) }
   }
   useEffect(() => { cargar() }, [encargoId, productoId]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -50,8 +62,11 @@ export default function Adjuntos({ encargoId, productoId }) {
             <div key={a.id} style={{ width: 92 }}>
               <button type="button" onClick={() => abrir(a)} title={a.nombre}
                 className="btn-sec-claro"
-                style={{ width: 92, height: 84, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.2rem', padding: 0 }}>
-                {esImagen(a.tipo) ? '🖼️' : '📄'}
+                style={{ width: 92, height: 84, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '2.2rem', padding: 0, overflow: 'hidden' }}>
+                {esImagen(a.tipo) && urls[a.id]
+                  ? <img src={urls[a.id]} alt={a.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12 }} />
+                  : (esImagen(a.tipo) ? '🖼️' : '📄')}
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', marginTop: '0.15rem' }}>
                 <span style={{ flex: 1, fontSize: '0.7rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.nombre}</span>

@@ -3,7 +3,7 @@
 // Sustituye al antiguo listado de "Encargos".
 
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { supabaseConfigurado } from '../lib/supabase.js'
 import {
   listarEncargos, crearEncargo, actualizarEncargo, borrarEncargo, listarEmpresas,
@@ -22,6 +22,7 @@ const FORM_VACIO = {
 const eur = (n) => Number(n || 0).toLocaleString('es-ES')
 
 export default function Ventas() {
+  const navigate = useNavigate()
   const [encargos, setEncargos] = useState([])
   const [empresas, setEmpresas] = useState([])
   const [cargando, setCargando] = useState(true)
@@ -101,7 +102,7 @@ export default function Ventas() {
     }
   }
 
-  if (!supabaseConfigurado) return <SinConfigurar titulo="📊 Ventas" />
+  if (!supabaseConfigurado) return <SinConfigurar titulo="📊 Oportunidades" />
 
   // Métricas rápidas del pipeline (solo fases en curso).
   const abiertos = encargos.filter((e) => e.fase !== 'ganado' && e.fase !== 'perdido')
@@ -198,12 +199,13 @@ export default function Ventas() {
                     <p className="col-vacia">—</p>
                   ) : (
                     cards.map((en) => (
-                      <article className="card" key={en.id}>
+                      <article className="card" key={en.id} style={{ cursor: 'pointer' }}
+                        onClick={() => navigate(`/encargos/${en.id}`)} title="Abrir oportunidad">
                         <div className="card-top">
-                          <Link to={`/encargos/${en.id}`} className="card-titulo">
+                          <span className="card-titulo">
                             {en.producto}{en.cantidad ? ` ·x${en.cantidad}` : ''}
-                          </Link>
-                          <button className="btn-icono" onClick={() => eliminar(en.id)} title="Borrar">🗑️</button>
+                          </span>
+                          <button className="btn-icono" onClick={(e) => { e.stopPropagation(); eliminar(en.id) }} title="Borrar">🗑️</button>
                         </div>
                         <p className="card-sub">{en.empresas?.nombre || 'Sin empresa'}</p>
                         {(en.comision_esperada || en.fecha_limite) && (
@@ -214,9 +216,9 @@ export default function Ventas() {
                         )}
                         <div className="card-mover">
                           <button className="mover" disabled={fi === 0}
-                            onClick={() => moverFase(en, -1)} title="Fase anterior">‹</button>
+                            onClick={(e) => { e.stopPropagation(); moverFase(en, -1) }} title="Fase anterior">‹</button>
                           <button className="mover" disabled={fi === FASES.length - 1}
-                            onClick={() => moverFase(en, 1)} title="Fase siguiente">›</button>
+                            onClick={(e) => { e.stopPropagation(); moverFase(en, 1) }} title="Fase siguiente">›</button>
                         </div>
                       </article>
                     ))
