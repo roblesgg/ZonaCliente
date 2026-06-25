@@ -84,6 +84,16 @@ export default function Ajustes() {
           Abrir catálogo de productos →
         </Link>
       </div>
+
+      <div className="tarjeta" style={{ maxWidth: 520, marginTop: '1rem' }}>
+        <h3>🗑️ Papelera</h3>
+        <p className="placeholder" style={{ marginTop: 0 }}>
+          Recupera lo que hayas borrado. Se guarda 3 meses y luego se elimina solo.
+        </p>
+        <Link to="/papelera" className="btn-sec-claro" style={{ display: 'inline-block' }}>
+          Abrir papelera →
+        </Link>
+      </div>
     </>
   )
 }

@@ -12,6 +12,7 @@ export async function listarEmpresas() {
   const { data, error } = await supabase
     .from('empresas')
     .select('*')
+    .is('borrado_en', null)
     .order('nombre', { ascending: true })
   if (error) throw error
   return data
@@ -37,7 +38,7 @@ export async function actualizarEmpresa(id, cambios) {
 }
 
 export async function borrarEmpresa(id) {
-  const { error } = await supabase.from('empresas').delete().eq('id', id)
+  const { error } = await supabase.from('empresas').update({ borrado_en: new Date().toISOString() }).eq('id', id)
   if (error) throw error
 }
 
@@ -50,6 +51,7 @@ export async function listarPersonas(tipo) {
   let q = supabase
     .from('personas')
     .select('*, empresas(nombre, tipo)')
+    .is('borrado_en', null)
     .order('nombre', { ascending: true })
   if (tipo) q = q.eq('tipo', tipo)
   const { data, error } = await q
@@ -71,7 +73,7 @@ export async function actualizarPersona(id, cambios) {
 }
 
 export async function borrarPersona(id) {
-  const { error } = await supabase.from('personas').delete().eq('id', id)
+  const { error } = await supabase.from('personas').update({ borrado_en: new Date().toISOString() }).eq('id', id)
   if (error) throw error
 }
 
@@ -83,6 +85,7 @@ export async function listarEncargos() {
   const { data, error } = await supabase
     .from('encargos')
     .select('*, empresas(nombre, tipo)')
+    .is('borrado_en', null)
     .order('creado_en', { ascending: false })
   if (error) throw error
   return data
@@ -102,7 +105,7 @@ export async function actualizarEncargo(id, cambios) {
 }
 
 export async function borrarEncargo(id) {
-  const { error } = await supabase.from('encargos').delete().eq('id', id)
+  const { error } = await supabase.from('encargos').update({ borrado_en: new Date().toISOString() }).eq('id', id)
   if (error) throw error
 }
 
@@ -122,7 +125,7 @@ export async function obtenerEncargo(id) {
 
 export async function listarProductos() {
   const { data, error } = await supabase
-    .from('productos').select('*').order('nombre', { ascending: true })
+    .from('productos').select('*').is('borrado_en', null).order('nombre', { ascending: true })
   if (error) throw error
   return data
 }
@@ -141,7 +144,7 @@ export async function actualizarProducto(id, cambios) {
 }
 
 export async function borrarProducto(id) {
-  const { error } = await supabase.from('productos').delete().eq('id', id)
+  const { error } = await supabase.from('productos').update({ borrado_en: new Date().toISOString() }).eq('id', id)
   if (error) throw error
 }
 
@@ -243,7 +246,7 @@ export async function borrarOferta(id) {
 
 export async function listarNotasDeEncargo(encargoId) {
   const { data, error } = await supabase
-    .from('notas').select('*').eq('encargo_id', encargoId)
+    .from('notas').select('*').eq('encargo_id', encargoId).is('borrado_en', null)
     .order('creado_en', { ascending: false })
   if (error) throw error
   return data
@@ -256,7 +259,7 @@ export async function crearNota(nota) {
 }
 
 export async function borrarNota(id) {
-  const { error } = await supabase.from('notas').delete().eq('id', id)
+  const { error } = await supabase.from('notas').update({ borrado_en: new Date().toISOString() }).eq('id', id)
   if (error) throw error
 }
 
@@ -265,6 +268,7 @@ export async function listarRecordatorios() {
     .from('notas')
     .select('id, texto, recordatorio, recordatorio_hora, aviso_min, encargos(producto, descripcion)')
     .not('recordatorio', 'is', null)
+    .is('borrado_en', null)
     .order('recordatorio', { ascending: true })
   if (error) throw error
   return data
@@ -276,7 +280,7 @@ export async function listarRecordatorios() {
 
 export async function listarTareasDeEncargo(encargoId) {
   const { data, error } = await supabase
-    .from('tareas').select('*, personas(nombre, tipo)').eq('encargo_id', encargoId)
+    .from('tareas').select('*, personas(nombre, tipo)').eq('encargo_id', encargoId).is('borrado_en', null)
     .order('completada', { ascending: true })
     .order('fecha_limite', { ascending: true, nullsFirst: false })
   if (error) throw error
@@ -297,7 +301,7 @@ export async function actualizarTarea(id, cambios) {
 }
 
 export async function borrarTarea(id) {
-  const { error } = await supabase.from('tareas').delete().eq('id', id)
+  const { error } = await supabase.from('tareas').update({ borrado_en: new Date().toISOString() }).eq('id', id)
   if (error) throw error
 }
 
@@ -307,6 +311,7 @@ export async function listarTareasPendientes() {
     .from('tareas')
     .select('*, personas(nombre), encargos(producto, fase, empresas(nombre))')
     .eq('completada', false)
+    .is('borrado_en', null)
     .order('fecha_limite', { ascending: true, nullsFirst: false })
   if (error) throw error
   return data
@@ -320,10 +325,10 @@ export async function listarAvisos() {
   const [rNotas, rTareas] = await Promise.all([
     supabase.from('notas')
       .select('id, texto, recordatorio, recordatorio_hora, encargo_id, encargos(producto, empresas(nombre))')
-      .not('recordatorio', 'is', null),
+      .not('recordatorio', 'is', null).is('borrado_en', null),
     supabase.from('tareas')
       .select('id, texto, fecha_limite, hora, completada, encargo_id, encargos(producto, empresas(nombre))')
-      .not('fecha_limite', 'is', null),
+      .not('fecha_limite', 'is', null).is('borrado_en', null),
   ])
   if (rNotas.error) throw rNotas.error
   if (rTareas.error) throw rTareas.error
@@ -345,27 +350,50 @@ export async function listarAvisos() {
 // ADJUNTOS (fotos y PDFs de oportunidades y productos) — Supabase Storage
 // ---------------------------------------------------------------
 
-export async function listarAdjuntos({ encargoId, productoId }) {
+// ref = { encargoId | productoId | tareaId | notaId } (a qué pertenece el adjunto)
+function refAdjunto(ref) {
+  return {
+    encargo_id: ref.encargoId || null, producto_id: ref.productoId || null,
+    tarea_id: ref.tareaId || null, nota_id: ref.notaId || null,
+  }
+}
+function carpetaAdjunto(ref) {
+  if (ref.encargoId) return `oportunidad/${ref.encargoId}`
+  if (ref.productoId) return `producto/${ref.productoId}`
+  if (ref.tareaId) return `tarea/${ref.tareaId}`
+  return `nota/${ref.notaId}`
+}
+
+export async function listarAdjuntos(ref) {
   let q = supabase.from('adjuntos').select('*').order('creado_en', { ascending: false })
-  if (encargoId) q = q.eq('encargo_id', encargoId)
-  if (productoId) q = q.eq('producto_id', productoId)
+  if (ref.encargoId) q = q.eq('encargo_id', ref.encargoId)
+  if (ref.productoId) q = q.eq('producto_id', ref.productoId)
+  if (ref.tareaId) q = q.eq('tarea_id', ref.tareaId)
+  if (ref.notaId) q = q.eq('nota_id', ref.notaId)
   const { data, error } = await q
   if (error) throw error
   return data
 }
 
-export async function subirAdjunto(file, { encargoId, productoId }) {
+export async function subirAdjunto(file, ref, descripcion) {
   const { data: u } = await supabase.auth.getUser()
   const uid = u?.user?.id
   if (!uid) throw new Error('Sin sesión')
-  const carpeta = encargoId ? `oportunidad/${encargoId}` : `producto/${productoId}`
   const limpio = (file.name || 'archivo').replace(/[^\w.\-]/g, '_')
-  const ruta = `${uid}/${carpeta}/${Date.now()}-${limpio}`
+  const ruta = `${uid}/${carpetaAdjunto(ref)}/${Date.now()}-${limpio}`
   const { error: errUp } = await supabase.storage.from('adjuntos').upload(ruta, file, { contentType: file.type })
   if (errUp) throw errUp
   const { data, error } = await supabase.from('adjuntos').insert({
-    encargo_id: encargoId || null, producto_id: productoId || null,
-    nombre: file.name, ruta, tipo: file.type,
+    ...refAdjunto(ref), nombre: file.name, ruta, tipo: file.type, descripcion: descripcion || null,
+  }).select().single()
+  if (error) throw error
+  return data
+}
+
+// Adjuntar un ENLACE (URL) en vez de un archivo.
+export async function crearEnlace(url, ref, descripcion) {
+  const { data, error } = await supabase.from('adjuntos').insert({
+    ...refAdjunto(ref), nombre: url, ruta: url, tipo: 'enlace', descripcion: descripcion || null,
   }).select().single()
   if (error) throw error
   return data
@@ -378,8 +406,46 @@ export async function urlAdjunto(ruta) {
 }
 
 export async function borrarAdjunto(adj) {
-  await supabase.storage.from('adjuntos').remove([adj.ruta]).catch(() => {})
+  if (adj.tipo !== 'enlace') await supabase.storage.from('adjuntos').remove([adj.ruta]).catch(() => {})
   const { error } = await supabase.from('adjuntos').delete().eq('id', adj.id)
+  if (error) throw error
+}
+
+// ---------------------------------------------------------------
+// PAPELERA (borrado suave: restaurar o borrar definitivo; purga a 3 meses)
+// ---------------------------------------------------------------
+
+const TABLAS_PAPELERA = [
+  { tabla: 'empresas', etiqueta: 'Empresa', campo: 'nombre' },
+  { tabla: 'personas', etiqueta: 'Persona', campo: 'nombre' },
+  { tabla: 'productos', etiqueta: 'Producto', campo: 'nombre' },
+  { tabla: 'encargos', etiqueta: 'Oportunidad', campo: 'producto' },
+  { tabla: 'notas', etiqueta: 'Nota', campo: 'texto' },
+  { tabla: 'tareas', etiqueta: 'Tarea', campo: 'texto' },
+]
+
+export async function listarPapelera() {
+  const res = await Promise.all(TABLAS_PAPELERA.map(async (t) => {
+    const { data, error } = await supabase.from(t.tabla)
+      .select(`id, ${t.campo}, borrado_en`)
+      .not('borrado_en', 'is', null)
+      .order('borrado_en', { ascending: false })
+    if (error) throw error
+    return (data || []).map((r) => ({
+      tabla: t.tabla, etiqueta: t.etiqueta, id: r.id,
+      texto: r[t.campo] || '(sin nombre)', borrado_en: r.borrado_en,
+    }))
+  }))
+  return res.flat().sort((a, b) => new Date(b.borrado_en) - new Date(a.borrado_en))
+}
+
+export async function restaurarPapelera(tabla, id) {
+  const { error } = await supabase.from(tabla).update({ borrado_en: null }).eq('id', id)
+  if (error) throw error
+}
+
+export async function borrarDefinitivo(tabla, id) {
+  const { error } = await supabase.from(tabla).delete().eq('id', id)
   if (error) throw error
 }
 

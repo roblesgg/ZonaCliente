@@ -10,6 +10,7 @@ import EncargoDetalle from './pages/EncargoDetalle.jsx'
 import Calendario from './pages/Calendario.jsx'
 import Buscar from './pages/Buscar.jsx'
 import Avisos from './pages/Avisos.jsx'
+import Papelera from './pages/Papelera.jsx'
 import Ajustes from './pages/Ajustes.jsx'
 import Productos from './pages/Productos.jsx'
 
@@ -66,6 +67,7 @@ export default function App() {
         <Route path="agenda" element={<Calendario />} />
         <Route path="buscar" element={<Buscar />} />
         <Route path="avisos" element={<Avisos />} />
+        <Route path="papelera" element={<Papelera />} />
         <Route path="ajustes" element={<Ajustes />} />
         <Route path="productos" element={<Productos />} />
 

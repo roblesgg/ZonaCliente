@@ -61,6 +61,8 @@ export default function EncargoDetalle() {
   const [oferta, setOferta] = useState({ de_persona_id: '', para_persona_id: '', precio: '', notas: '' })
   const [nota, setNota] = useState({ texto: '', recordatorio: '', recordatorio_hora: '', aviso_min: 0 })
   const [nuevaTarea, setNuevaTarea] = useState({ texto: '', fecha_limite: '', hora: '', aviso_min: 0, persona_id: '' })
+  const [adjTarea, setAdjTarea] = useState(null) // tarea con su panel de adjuntos abierto
+  const [adjNota, setAdjNota] = useState(null)   // nota con su panel de adjuntos abierto
 
   // Reprograma los avisos del móvil tras tocar recordatorios o tareas.
   function reprogramarAvisos() {
@@ -407,23 +409,27 @@ export default function EncargoDetalle() {
             {tareas.map((t) => {
               const vencida = !t.completada && t.fecha_limite && t.fecha_limite < hoyStr
               return (
-                <div key={t.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem',
-                  padding: '0.5rem 0.6rem', background: 'var(--fondo)', borderRadius: 'var(--radio)' }}>
-                  <input type="checkbox" checked={t.completada} onChange={() => alternarTarea(t)}
-                    style={{ width: 18, height: 18, flex: 'none', marginTop: '0.15rem' }} />
-                  <div style={{ flex: 1, textDecoration: t.completada ? 'line-through' : 'none',
-                    color: t.completada ? 'var(--texto-suave)' : 'inherit' }}>
-                    <div style={{ whiteSpace: 'pre-wrap' }}>{t.texto}</div>
-                    <div style={{ marginTop: '0.2rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                      {t.fecha_limite && (
-                        <span className="badge" style={{ background: vencida ? '#fee2e2' : '#fef3c7', color: vencida ? 'var(--rojo)' : 'var(--ambar)' }}>
-                          📅 {t.fecha_limite}{t.hora ? ` ${String(t.hora).slice(0, 5)}` : ' · todo el día'}
-                        </span>
-                      )}
-                      {t.personas?.nombre && <span className="placeholder" style={{ fontSize: '0.8rem' }}>👤 {t.personas.nombre}</span>}
+                <div key={t.id} style={{ background: 'var(--fondo)', borderRadius: 'var(--radio)', padding: '0.5rem 0.6rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
+                    <input type="checkbox" checked={t.completada} onChange={() => alternarTarea(t)}
+                      style={{ width: 18, height: 18, flex: 'none', marginTop: '0.15rem' }} />
+                    <div style={{ flex: 1, textDecoration: t.completada ? 'line-through' : 'none',
+                      color: t.completada ? 'var(--texto-suave)' : 'inherit' }}>
+                      <div style={{ whiteSpace: 'pre-wrap' }}>{t.texto}</div>
+                      <div style={{ marginTop: '0.2rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                        {t.fecha_limite && (
+                          <span className="badge" style={{ background: vencida ? '#fee2e2' : '#fef3c7', color: vencida ? 'var(--rojo)' : 'var(--ambar)' }}>
+                            📅 {t.fecha_limite}{t.hora ? ` ${String(t.hora).slice(0, 5)}` : ' · todo el día'}
+                          </span>
+                        )}
+                        {t.personas?.nombre && <span className="placeholder" style={{ fontSize: '0.8rem' }}>👤 {t.personas.nombre}</span>}
+                      </div>
                     </div>
+                    <button className="btn-icono" title="Adjuntar fotos/archivos/enlaces"
+                      onClick={() => setAdjTarea(adjTarea === t.id ? null : t.id)}>📎</button>
+                    <button className="btn-icono" title="Borrar" onClick={() => quitarTarea(t.id)}>🗑️</button>
                   </div>
-                  <button className="btn-icono" title="Borrar" onClick={() => quitarTarea(t.id)}>🗑️</button>
+                  {adjTarea === t.id && <Adjuntos tareaId={t.id} compacto />}
                 </div>
               )
             })}
@@ -585,7 +591,9 @@ export default function EncargoDetalle() {
             {notas.map((n) => (
               <div key={n.id} style={{ borderLeft: '3px solid var(--azul)', paddingLeft: '0.7rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
-                  <span style={{ whiteSpace: 'pre-wrap' }}>{n.texto}</span>
+                  <span style={{ whiteSpace: 'pre-wrap', flex: 1 }}>{n.texto}</span>
+                  <button className="btn-icono" title="Adjuntar fotos/archivos/enlaces"
+                    onClick={() => setAdjNota(adjNota === n.id ? null : n.id)}>📎</button>
                   <button className="btn-icono" onClick={async () => { await borrarNota(n.id); cargar(); reprogramarAvisos() }} title="Borrar">🗑️</button>
                 </div>
                 <div className="placeholder" style={{ fontSize: '0.75rem' }}>
@@ -596,6 +604,7 @@ export default function EncargoDetalle() {
                     </span>
                   )}
                 </div>
+                {adjNota === n.id && <Adjuntos notaId={n.id} compacto />}
               </div>
             ))}
           </div>

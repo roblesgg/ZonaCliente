@@ -216,3 +216,53 @@ begin
     execute format('create policy "propios" on %I for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());', t);
   end loop;
 end $$;
+
+-- =============================================================
+-- 12) AMPLIACIONES (adjuntos, papelera con borrado suave y purga)
+--     Idempotente; refleja lo aplicado en producción.
+-- =============================================================
+
+-- Adjuntos (fotos, PDFs y enlaces) de oportunidades, productos, tareas y notas.
+create table if not exists adjuntos (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  encargo_id  uuid references encargos(id) on delete cascade,
+  producto_id uuid references productos(id) on delete cascade,
+  tarea_id    uuid references tareas(id) on delete cascade,
+  nota_id     uuid references notas(id) on delete cascade,
+  nombre      text not null,
+  ruta        text not null,            -- ruta en Storage, o URL si es enlace
+  tipo        text,                     -- mime, o 'enlace'
+  descripcion text,
+  creado_en   timestamptz not null default now()
+);
+alter table adjuntos enable row level security;
+drop policy if exists "propios" on adjuntos;
+create policy "propios" on adjuntos for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Bucket privado para los archivos
+insert into storage.buckets (id, name, public) values ('adjuntos','adjuntos', false) on conflict (id) do nothing;
+drop policy if exists "adjuntos_propios" on storage.objects;
+create policy "adjuntos_propios" on storage.objects for all to authenticated
+  using (bucket_id='adjuntos' and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id='adjuntos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- Papelera: borrado suave (se conserva 3 meses y se purga solo)
+alter table empresas  add column if not exists borrado_en timestamptz;
+alter table personas  add column if not exists borrado_en timestamptz;
+alter table productos add column if not exists borrado_en timestamptz;
+alter table encargos  add column if not exists borrado_en timestamptz;
+alter table notas     add column if not exists borrado_en timestamptz;
+alter table tareas    add column if not exists borrado_en timestamptz;
+
+create extension if not exists pg_cron;
+create or replace function purgar_papelera() returns void language plpgsql security definer as $purga$
+begin
+  delete from empresas  where borrado_en is not null and borrado_en < now() - interval '3 months';
+  delete from personas  where borrado_en is not null and borrado_en < now() - interval '3 months';
+  delete from productos where borrado_en is not null and borrado_en < now() - interval '3 months';
+  delete from encargos  where borrado_en is not null and borrado_en < now() - interval '3 months';
+  delete from notas     where borrado_en is not null and borrado_en < now() - interval '3 months';
+  delete from tareas    where borrado_en is not null and borrado_en < now() - interval '3 months';
+end; $purga$;
+-- select cron.schedule('purga-papelera', '0 3 * * *', 'select purgar_papelera()');
