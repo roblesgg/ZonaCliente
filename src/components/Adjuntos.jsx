@@ -4,6 +4,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { listarAdjuntos, subirAdjunto, crearEnlace, borrarAdjunto, urlAdjunto } from '../lib/datos.js'
+import { imagenesDePegado, leerImagenPortapapeles } from '../lib/portapapeles'
 
 export default function Adjuntos({ encargoId, productoId, tareaId, notaId, compacto }) {
   const [items, setItems] = useState([])
@@ -29,8 +30,7 @@ export default function Adjuntos({ encargoId, productoId, tareaId, notaId, compa
   }
   useEffect(() => { cargar() }, [encargoId, productoId, tareaId, notaId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function alElegir(e) {
-    const files = Array.from(e.target.files || [])
+  async function subirArchivos(files) {
     if (!files.length) return
     setSubiendo(true); setError(null)
     try {
@@ -38,7 +38,24 @@ export default function Adjuntos({ encargoId, productoId, tareaId, notaId, compa
       setDesc('')
       await cargar()
     } catch (e) { setError(e.message) }
-    finally { setSubiendo(false); if (inputRef.current) inputRef.current.value = '' }
+    finally { setSubiendo(false) }
+  }
+  async function alElegir(e) {
+    await subirArchivos(Array.from(e.target.files || []))
+    if (inputRef.current) inputRef.current.value = ''
+  }
+  function alPegar(e) {
+    const imgs = imagenesDePegado(e)
+    if (imgs.length) { e.preventDefault(); subirArchivos(imgs) }
+  }
+  async function pegarBoton() {
+    try {
+      const f = await leerImagenPortapapeles()
+      if (f) await subirArchivos([f])
+      else alert('No hay ninguna imagen en el portapapeles.')
+    } catch {
+      alert('No se pudo leer el portapapeles. Copia la imagen y pega con Ctrl+V en el campo de descripción.')
+    }
   }
 
   async function añadirEnlace() {
@@ -88,13 +105,14 @@ export default function Adjuntos({ encargoId, productoId, tareaId, notaId, compa
         </div>
       )}
 
-      <input className="campo" placeholder="Descripción (opcional, para lo que añadas)" value={desc}
-        onChange={(e) => setDesc(e.target.value)} style={{ marginBottom: '0.5rem' }} />
+      <input className="campo" placeholder="Descripción o pega aquí una imagen (Ctrl+V)" value={desc}
+        onChange={(e) => setDesc(e.target.value)} onPaste={alPegar} style={{ marginBottom: '0.5rem' }} />
       <input ref={inputRef} type="file" accept="image/*,application/pdf" multiple style={{ display: 'none' }} onChange={alElegir} />
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
         <button type="button" className="btn-sec-claro" disabled={subiendo} onClick={() => inputRef.current?.click()}>
           {subiendo ? 'Subiendo…' : '📎 Foto / PDF'}
         </button>
+        <button type="button" className="btn-sec-claro" disabled={subiendo} onClick={pegarBoton}>📋 Pegar</button>
         <button type="button" className="btn-sec-claro" disabled={subiendo} onClick={() => setPonerEnlace((v) => !v)}>🔗 Enlace</button>
       </div>
       {ponerEnlace && (

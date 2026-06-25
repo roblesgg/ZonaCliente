@@ -2,6 +2,7 @@
 // o nota. No sube nada todavía; al guardar, el padre los sube con el id nuevo.
 
 import { useRef, useState } from 'react'
+import { imagenesDePegado, leerImagenPortapapeles } from '../lib/portapapeles'
 
 let contador = 0
 
@@ -12,13 +13,28 @@ export default function AdjuntosPendientes({ value, onChange }) {
   const inputRef = useRef(null)
   const lista = value || []
 
-  function añadirArchivos(e) {
-    const files = Array.from(e.target.files || [])
+  function meterArchivos(files) {
     if (!files.length) return
     const nuevos = files.map((f) => ({ id: ++contador, file: f, tipo: f.type, nombre: f.name, descripcion: desc }))
     onChange([...lista, ...nuevos])
     setDesc('')
+  }
+  function añadirArchivos(e) {
+    meterArchivos(Array.from(e.target.files || []))
     if (inputRef.current) inputRef.current.value = ''
+  }
+  function alPegar(e) {
+    const imgs = imagenesDePegado(e)
+    if (imgs.length) { e.preventDefault(); meterArchivos(imgs) }
+  }
+  async function pegarBoton() {
+    try {
+      const f = await leerImagenPortapapeles()
+      if (f) meterArchivos([f])
+      else alert('No hay ninguna imagen en el portapapeles.')
+    } catch {
+      alert('No se pudo leer el portapapeles. Copia la imagen y pega con Ctrl+V en el campo de descripción.')
+    }
   }
   function añadirEnlace() {
     if (!enlace.trim()) return
@@ -41,11 +57,12 @@ export default function AdjuntosPendientes({ value, onChange }) {
           ))}
         </div>
       )}
-      <input className="campo" placeholder="Descripción del adjunto (opcional)" value={desc}
-        onChange={(e) => setDesc(e.target.value)} style={{ marginBottom: '0.4rem' }} />
+      <input className="campo" placeholder="Descripción o pega aquí una imagen (Ctrl+V)" value={desc}
+        onChange={(e) => setDesc(e.target.value)} onPaste={alPegar} style={{ marginBottom: '0.4rem' }} />
       <input ref={inputRef} type="file" accept="image/*,application/pdf" multiple style={{ display: 'none' }} onChange={añadirArchivos} />
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
         <button type="button" className="btn-sec-claro" onClick={() => inputRef.current?.click()}>📎 Foto / PDF</button>
+        <button type="button" className="btn-sec-claro" onClick={pegarBoton}>📋 Pegar</button>
         <button type="button" className="btn-sec-claro" onClick={() => setPonerEnlace((v) => !v)}>🔗 Enlace</button>
       </div>
       {ponerEnlace && (
