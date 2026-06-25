@@ -7,6 +7,7 @@ import { supabaseConfigurado } from '../lib/supabase.js'
 import { listarProductos, crearProducto, actualizarProducto, borrarProducto } from '../lib/datos.js'
 import CamposExtra from '../components/CamposExtra.jsx'
 import { CampoMoneda } from '../components/CamposNumero.jsx'
+import Adjuntos from '../components/Adjuntos.jsx'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
 const VACIO = { nombre: '', referencia: '', marca: '', descripcion: '', precio: '', extra: {} }
@@ -76,11 +77,7 @@ export default function Productos() {
 
   return (
     <>
-      <Link to="/ajustes" className="badge" style={{ background: 'var(--fondo)', color: 'var(--texto-suave)' }}>
-        ‹ Ajustes
-      </Link>
-
-      <div className="cab-pagina" style={{ marginTop: '0.75rem' }}>
+      <div className="cab-pagina">
         <h1 className="titulo-pagina">📦 Productos</h1>
         <button className="btn-primario" onClick={mostrarForm ? () => setMostrarForm(false) : nuevo}>
           {mostrarForm ? 'Cancelar' : '+ Nuevo producto'}
@@ -113,6 +110,9 @@ export default function Productos() {
           </button>
         </form>
       )}
+
+      {/* Adjuntos del producto (al editar uno ya guardado) */}
+      {mostrarForm && editId && <Adjuntos productoId={editId} />}
 
       {error && (
         <div className="tarjeta" style={{ borderColor: 'var(--rojo)', color: 'var(--rojo)', marginBottom: '1rem' }}>

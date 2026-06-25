@@ -342,6 +342,48 @@ export async function listarAvisos() {
 }
 
 // ---------------------------------------------------------------
+// ADJUNTOS (fotos y PDFs de oportunidades y productos) — Supabase Storage
+// ---------------------------------------------------------------
+
+export async function listarAdjuntos({ encargoId, productoId }) {
+  let q = supabase.from('adjuntos').select('*').order('creado_en', { ascending: false })
+  if (encargoId) q = q.eq('encargo_id', encargoId)
+  if (productoId) q = q.eq('producto_id', productoId)
+  const { data, error } = await q
+  if (error) throw error
+  return data
+}
+
+export async function subirAdjunto(file, { encargoId, productoId }) {
+  const { data: u } = await supabase.auth.getUser()
+  const uid = u?.user?.id
+  if (!uid) throw new Error('Sin sesión')
+  const carpeta = encargoId ? `oportunidad/${encargoId}` : `producto/${productoId}`
+  const limpio = (file.name || 'archivo').replace(/[^\w.\-]/g, '_')
+  const ruta = `${uid}/${carpeta}/${Date.now()}-${limpio}`
+  const { error: errUp } = await supabase.storage.from('adjuntos').upload(ruta, file, { contentType: file.type })
+  if (errUp) throw errUp
+  const { data, error } = await supabase.from('adjuntos').insert({
+    encargo_id: encargoId || null, producto_id: productoId || null,
+    nombre: file.name, ruta, tipo: file.type,
+  }).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function urlAdjunto(ruta) {
+  const { data, error } = await supabase.storage.from('adjuntos').createSignedUrl(ruta, 3600)
+  if (error) throw error
+  return data.signedUrl
+}
+
+export async function borrarAdjunto(adj) {
+  await supabase.storage.from('adjuntos').remove([adj.ruta]).catch(() => {})
+  const { error } = await supabase.from('adjuntos').delete().eq('id', adj.id)
+  if (error) throw error
+}
+
+// ---------------------------------------------------------------
 // AJUSTES (configuración del usuario)
 // ---------------------------------------------------------------
 

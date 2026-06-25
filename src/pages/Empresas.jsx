@@ -1,32 +1,27 @@
-// Listado de EMPRESAS (organizaciones tipadas: hospital, clínica, fábrica,
-// proveedor, otro): listar, alta y borrar.
+// Listado de EMPRESAS (organizaciones tipadas). Alta y edición en popup con
+// todos los campos; clic en una tarjeta para editarla. La dirección enlaza a
+// Google Maps para iniciar ruta.
 
 import { useEffect, useState } from 'react'
 import { supabaseConfigurado } from '../lib/supabase.js'
-import { listarEmpresas, crearEmpresa, borrarEmpresa } from '../lib/datos.js'
-import { TIPOS_EMPRESA, etiquetaTipoEmpresa } from '../lib/constantes.js'
-import { useBorrador } from '../lib/useBorrador.js'
-import CamposExtra from '../components/CamposExtra.jsx'
-import Desplegable from '../components/Desplegable.jsx'
+import { listarEmpresas, borrarEmpresa } from '../lib/datos.js'
+import { etiquetaTipoEmpresa } from '../lib/constantes.js'
 import Modal from '../components/Modal.jsx'
 import FormEmpresa from '../components/FormEmpresa.jsx'
 
-const FORM_VACIO = {
-  nombre: '', tipo: 'hospital', ciudad: '', provincia: '',
-  telefono: '', email: '', notas: '', extra: {},
+function mapsUrl(em) {
+  const dir = [em.direccion, em.codigo_postal, em.ciudad, em.provincia].filter(Boolean).join(', ')
+  return dir ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dir)}` : null
 }
 
 export default function Empresas() {
   const [empresas, setEmpresas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
-  const [form, setForm, limpiarForm] = useBorrador('borrador-empresa', FORM_VACIO)
-  const [mostrarForm, setMostrarForm] = useState(false)
-  const [guardando, setGuardando] = useState(false)
-  const [editar, setEditar] = useState(null) // empresa que se está editando
+  const [modal, setModal] = useState(null) // null=cerrado, 'nuevo'=alta, objeto=edición
 
   async function cargar() {
-    setError(null) // sin "Cargando…" en recargas: no salta el scroll
+    setError(null)
     try {
       setEmpresas(await listarEmpresas())
     } catch (e) {
@@ -41,45 +36,12 @@ export default function Empresas() {
     else setCargando(false)
   }, [])
 
-  async function enviar(e) {
-    e.preventDefault()
-    if (!form.nombre.trim()) return
-    setGuardando(true)
-    setError(null)
-    try {
-      await crearEmpresa({
-        nombre: form.nombre.trim(),
-        tipo: form.tipo || null,
-        ciudad: form.ciudad || null,
-        provincia: form.provincia || null,
-        telefono: form.telefono || null,
-        email: form.email || null,
-        notas: form.notas || null,
-        extra: form.extra || {},
-      })
-      limpiarForm()
-      setMostrarForm(false)
-      await cargar()
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setGuardando(false)
-    }
-  }
-
   async function eliminar(id) {
     if (!confirm('¿Borrar esta empresa?')) return
-    try {
-      await borrarEmpresa(id)
-      await cargar()
-    } catch (e) {
-      setError(e.message)
-    }
+    try { await borrarEmpresa(id); await cargar() } catch (e) { setError(e.message) }
   }
 
-  function tel(t) {
-    return t ? t.replace(/\s/g, '') : ''
-  }
+  const tel = (t) => (t ? t.replace(/\s/g, '') : '')
 
   if (!supabaseConfigurado) {
     return (
@@ -93,46 +55,11 @@ export default function Empresas() {
   return (
     <>
       <div className="cab-seccion">
-        <button className="btn-primario" onClick={() => setMostrarForm((v) => !v)}>
-          {mostrarForm ? 'Cancelar' : '+ Nueva empresa'}
-        </button>
+        <button className="btn-primario" onClick={() => setModal('nuevo')}>+ Nueva empresa</button>
       </div>
 
-      {mostrarForm && (
-        <form className="tarjeta" style={{ margin: '1rem 0' }} onSubmit={enviar}>
-          <h3>Nueva empresa</h3>
-          <div className="campos">
-            <input className="campo" placeholder="Nombre *" value={form.nombre}
-              onChange={(e) => setForm({ ...form, nombre: e.target.value })} autoFocus />
-            <Desplegable value={form.tipo} onChange={(v) => setForm({ ...form, tipo: v })}
-              opciones={TIPOS_EMPRESA.map((t) => ({ valor: t.v, etiqueta: t.t }))} />
-            <input className="campo" placeholder="Ciudad" value={form.ciudad}
-              onChange={(e) => setForm({ ...form, ciudad: e.target.value })} />
-            <input className="campo" placeholder="Provincia" value={form.provincia}
-              onChange={(e) => setForm({ ...form, provincia: e.target.value })} />
-            <input className="campo" placeholder="Teléfono" value={form.telefono}
-              onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
-            <input className="campo" placeholder="Email" value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          </div>
-          <textarea className="campo" rows={2} placeholder="Notas" style={{ marginTop: '0.6rem' }}
-            value={form.notas} onChange={(e) => setForm({ ...form, notas: e.target.value })} />
-          <div style={{ marginTop: '0.6rem' }}>
-            <CamposExtra valor={form.extra} onChange={(extra) => setForm({ ...form, extra })} />
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
-            <button className="btn-primario" type="submit" disabled={guardando}>
-              {guardando ? 'Guardando…' : 'Guardar empresa'}
-            </button>
-            <button type="button" className="btn-sec-claro" onClick={limpiarForm}>Limpiar</button>
-          </div>
-        </form>
-      )}
-
       {error && (
-        <div className="tarjeta" style={{ borderColor: 'var(--rojo)', color: 'var(--rojo)', margin: '1rem 0' }}>
-          Error: {error}
-        </div>
+        <div className="tarjeta" style={{ color: 'var(--rojo)', margin: '1rem 0' }}>Error: {error}</div>
       )}
 
       {cargando ? (
@@ -143,36 +70,49 @@ export default function Empresas() {
         </p>
       ) : (
         <div className="grid" style={{ marginTop: '1rem' }}>
-          {empresas.map((em) => (
-            <article key={em.id} className="tarjeta" style={{ cursor: 'pointer' }}
-              onClick={() => setEditar(em)} title="Editar empresa">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                <h3>{em.nombre}</h3>
-                <button className="btn-icono" onClick={(e) => { e.stopPropagation(); eliminar(em.id) }} title="Borrar">🗑️</button>
-              </div>
-              <p className="placeholder" style={{ margin: '0 0 0.5rem' }}>
-                {[etiquetaTipoEmpresa(em.tipo), em.ciudad, em.provincia].filter(Boolean).join(' · ') || 'Empresa'}
-              </p>
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                {em.telefono && (
-                  <a href={`tel:${tel(em.telefono)}`} className="badge" onClick={(e) => e.stopPropagation()}
-                     style={{ background: '#dcfce7', color: 'var(--verde)' }}>📞 Llamar</a>
+          {empresas.map((em) => {
+            const maps = mapsUrl(em)
+            return (
+              <article key={em.id} className="tarjeta" style={{ cursor: 'pointer' }}
+                onClick={() => setModal(em)} title="Editar empresa">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                  <h3>{em.nombre}</h3>
+                  <button className="btn-icono" onClick={(e) => { e.stopPropagation(); eliminar(em.id) }} title="Borrar">🗑️</button>
+                </div>
+                <p className="placeholder" style={{ margin: '0 0 0.4rem' }}>
+                  {[etiquetaTipoEmpresa(em.tipo), em.ciudad, em.provincia].filter(Boolean).join(' · ') || 'Empresa'}
+                </p>
+                {em.cif && <p className="placeholder" style={{ margin: '0 0 0.3rem', fontSize: '0.85rem' }}>CIF: {em.cif}</p>}
+                {(em.direccion || maps) && (
+                  <p style={{ margin: '0 0 0.4rem', fontSize: '0.88rem' }}>
+                    {[em.direccion, em.codigo_postal].filter(Boolean).join(', ')}
+                  </p>
                 )}
-                {em.email && (
-                  <a href={`mailto:${em.email}`} className="badge" onClick={(e) => e.stopPropagation()}
-                     style={{ background: 'var(--azul-claro)', color: 'var(--azul)' }}>✉️ Email</a>
-                )}
-              </div>
-              {em.notas && <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem' }}>{em.notas}</p>}
-            </article>
-          ))}
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {maps && (
+                    <a href={maps} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                       className="badge" style={{ background: 'var(--azul-claro)', color: 'var(--azul)' }}>🧭 Cómo llegar</a>
+                  )}
+                  {em.telefono && (
+                    <a href={`tel:${tel(em.telefono)}`} className="badge" onClick={(e) => e.stopPropagation()}
+                       style={{ background: '#dcfce7', color: 'var(--verde)' }}>📞 Llamar</a>
+                  )}
+                  {em.email && (
+                    <a href={`mailto:${em.email}`} className="badge" onClick={(e) => e.stopPropagation()}
+                       style={{ background: 'var(--azul-claro)', color: 'var(--azul)' }}>✉️ Email</a>
+                  )}
+                </div>
+                {em.notas && <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem' }}>{em.notas}</p>}
+              </article>
+            )
+          })}
         </div>
       )}
 
-      {editar && (
-        <Modal titulo="Editar empresa" onCerrar={() => setEditar(null)}>
-          <FormEmpresa inicial={editar} onCancelar={() => setEditar(null)}
-            onGuardada={() => { setEditar(null); cargar() }} />
+      {modal !== null && (
+        <Modal titulo={modal === 'nuevo' ? 'Nueva empresa' : 'Editar empresa'} onCerrar={() => setModal(null)}>
+          <FormEmpresa inicial={modal === 'nuevo' ? null : modal} onCancelar={() => setModal(null)}
+            onGuardada={() => { setModal(null); cargar() }} />
         </Modal>
       )}
     </>

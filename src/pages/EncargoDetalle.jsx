@@ -24,6 +24,7 @@ import SelectorEmpresa from '../components/SelectorEmpresa.jsx'
 import SelectorPersona from '../components/SelectorPersona.jsx'
 import Desplegable from '../components/Desplegable.jsx'
 import { CampoMoneda, CampoPorcentaje } from '../components/CamposNumero.jsx'
+import Adjuntos from '../components/Adjuntos.jsx'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
 const eur = (n) => Number(n || 0).toLocaleString('es-ES')
@@ -551,6 +552,9 @@ export default function EncargoDetalle() {
           <button className="btn-primario" type="button" onClick={añadirOferta} style={{ marginTop: '0.6rem' }}>+ Añadir oferta</button>
         </div>
       </section>
+
+      {/* Fotos y archivos adjuntos */}
+      <Adjuntos encargoId={id} />
 
       {/* Notas (con recordatorio opcional) */}
       <section className="tarjeta" style={{ marginTop: '1rem' }}>

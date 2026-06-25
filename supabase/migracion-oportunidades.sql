@@ -37,17 +37,19 @@ drop table if exists ajustes                cascade;
 -- 1) EMPRESAS (organizaciones: hospital, clínica, fábrica, proveedor, otro)
 -- -------------------------------------------------------------
 create table empresas (
-  id          uuid primary key default gen_random_uuid(),
-  nombre      text not null,
-  tipo        text,                 -- hospital / clinica / fabrica / proveedor / otro
-  ciudad      text,
-  provincia   text,
-  direccion   text,
-  telefono    text,
-  email       text,
-  notas       text,
-  extra       jsonb not null default '{}'::jsonb,
-  creado_en   timestamptz not null default now()
+  id            uuid primary key default gen_random_uuid(),
+  nombre        text not null,
+  tipo          text,               -- hospital / clinica / fabrica / proveedor / otro
+  cif           text,
+  direccion     text,
+  ciudad        text,
+  provincia     text,
+  codigo_postal text,
+  telefono      text,
+  email         text,
+  notas         text,
+  extra         jsonb not null default '{}'::jsonb,
+  creado_en     timestamptz not null default now()
 );
 
 -- -------------------------------------------------------------

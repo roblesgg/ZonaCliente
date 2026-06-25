@@ -5,8 +5,9 @@ import CamposExtra from './CamposExtra.jsx'
 import Desplegable from './Desplegable.jsx'
 
 const desde = (e) => ({
-  nombre: e?.nombre || '', tipo: e?.tipo || 'hospital', ciudad: e?.ciudad || '',
-  provincia: e?.provincia || '', telefono: e?.telefono || '', email: e?.email || '',
+  nombre: e?.nombre || '', tipo: e?.tipo || 'hospital', cif: e?.cif || '',
+  direccion: e?.direccion || '', ciudad: e?.ciudad || '', provincia: e?.provincia || '',
+  codigo_postal: e?.codigo_postal || '', telefono: e?.telefono || '', email: e?.email || '',
   notas: e?.notas || '', extra: e?.extra || {},
 })
 
@@ -23,8 +24,9 @@ export default function FormEmpresa({ inicial, onGuardada, onCancelar }) {
     setGuardando(true); setError(null)
     try {
       const payload = {
-        nombre: form.nombre.trim(), tipo: form.tipo || null,
-        ciudad: form.ciudad || null, provincia: form.provincia || null,
+        nombre: form.nombre.trim(), tipo: form.tipo || null, cif: form.cif || null,
+        direccion: form.direccion || null, ciudad: form.ciudad || null,
+        provincia: form.provincia || null, codigo_postal: form.codigo_postal || null,
         telefono: form.telefono || null, email: form.email || null,
         notas: form.notas || null, extra: form.extra || {},
       }
@@ -40,10 +42,16 @@ export default function FormEmpresa({ inicial, onGuardada, onCancelar }) {
           onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
         <Desplegable value={form.tipo} onChange={(v) => setForm({ ...form, tipo: v })}
           opciones={TIPOS_EMPRESA.map((t) => ({ valor: t.v, etiqueta: t.t }))} />
+        <input className="campo" placeholder="CIF" value={form.cif}
+          onChange={(e) => setForm({ ...form, cif: e.target.value })} />
+        <input className="campo" placeholder="Dirección" value={form.direccion}
+          onChange={(e) => setForm({ ...form, direccion: e.target.value })} />
         <input className="campo" placeholder="Ciudad" value={form.ciudad}
           onChange={(e) => setForm({ ...form, ciudad: e.target.value })} />
         <input className="campo" placeholder="Provincia" value={form.provincia}
           onChange={(e) => setForm({ ...form, provincia: e.target.value })} />
+        <input className="campo" placeholder="Código postal" value={form.codigo_postal}
+          onChange={(e) => setForm({ ...form, codigo_postal: e.target.value })} />
         <input className="campo" placeholder="Teléfono" value={form.telefono}
           onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
         <input className="campo" placeholder="Email" value={form.email}
