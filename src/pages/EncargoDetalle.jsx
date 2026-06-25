@@ -14,7 +14,7 @@ import {
   listarProductosDeOportunidad, añadirProductoAOportunidad, actualizarLineaProducto, quitarProductoDeOportunidad,
   listarPersonas, listarPersonasDeOportunidad, añadirPersonaAOportunidad, quitarPersonaDeOportunidad,
   actualizarDescripcionInvolucrado,
-  listarTareasDeEncargo, crearTarea, actualizarTarea, borrarTarea,
+  listarTareasDeEncargo, crearTarea, actualizarTarea, borrarTarea, subirPendientes,
 } from '../lib/datos.js'
 import { reprogramarTodo } from '../lib/notificaciones.js'
 import { FASES, faseInfo } from '../lib/fases.js'
@@ -25,6 +25,7 @@ import SelectorPersona from '../components/SelectorPersona.jsx'
 import Desplegable from '../components/Desplegable.jsx'
 import { CampoMoneda, CampoPorcentaje } from '../components/CamposNumero.jsx'
 import Adjuntos from '../components/Adjuntos.jsx'
+import AdjuntosPendientes from '../components/AdjuntosPendientes.jsx'
 import AutoTextarea from '../components/AutoTextarea.jsx'
 import SinConfigurar from '../components/SinConfigurar.jsx'
 
@@ -63,6 +64,8 @@ export default function EncargoDetalle() {
   const [nuevaTarea, setNuevaTarea] = useState({ texto: '', fecha_limite: '', hora: '', aviso_min: 0, persona_id: '' })
   const [adjTarea, setAdjTarea] = useState(null) // tarea con su panel de adjuntos abierto
   const [adjNota, setAdjNota] = useState(null)   // nota con su panel de adjuntos abierto
+  const [tareaAdjNuevos, setTareaAdjNuevos] = useState([]) // adjuntos pendientes de la tarea nueva
+  const [notaAdjNuevos, setNotaAdjNuevos] = useState([])   // adjuntos pendientes de la nota nueva
 
   // Reprograma los avisos del móvil tras tocar recordatorios o tareas.
   function reprogramarAvisos() {
@@ -182,14 +185,16 @@ export default function EncargoDetalle() {
     e.preventDefault()
     if (!nuevaTarea.texto.trim()) return
     try {
-      await crearTarea({
+      const creada = await crearTarea({
         encargo_id: id, texto: nuevaTarea.texto.trim(),
         fecha_limite: nuevaTarea.fecha_limite || null,
         hora: nuevaTarea.fecha_limite ? (nuevaTarea.hora || null) : null,
         aviso_min: nuevaTarea.fecha_limite ? Number(nuevaTarea.aviso_min) || 0 : 0,
         persona_id: nuevaTarea.persona_id || null,
       })
+      if (tareaAdjNuevos.length) await subirPendientes(tareaAdjNuevos, { tareaId: creada.id })
       setNuevaTarea({ texto: '', fecha_limite: '', hora: '', aviso_min: 0, persona_id: '' })
+      setTareaAdjNuevos([])
       setTareas(await listarTareasDeEncargo(id))
       reprogramarAvisos()
     } catch (e) { setError(e.message) }
@@ -263,14 +268,16 @@ export default function EncargoDetalle() {
     e.preventDefault()
     if (!nota.texto.trim()) return
     try {
-      await crearNota({
+      const creada = await crearNota({
         encargo_id: id,
         texto: nota.texto,
         recordatorio: nota.recordatorio || null,
         recordatorio_hora: nota.recordatorio ? (nota.recordatorio_hora || null) : null,
         aviso_min: nota.recordatorio ? Number(nota.aviso_min) || 0 : 0,
       })
+      if (notaAdjNuevos.length) await subirPendientes(notaAdjNuevos, { notaId: creada.id })
       setNota({ texto: '', recordatorio: '', recordatorio_hora: '', aviso_min: 0 })
+      setNotaAdjNuevos([])
       await cargar()
       reprogramarAvisos()
     } catch (e) { setError(e.message) }
@@ -455,6 +462,10 @@ export default function EncargoDetalle() {
               onChange={(pid) => setNuevaTarea((t) => ({ ...t, persona_id: pid }))}
               onCreada={async () => setPersonas(await listarPersonas())} />
           </div>
+          <div style={{ marginTop: '0.5rem' }}>
+            <label className="placeholder" style={{ fontSize: '0.8rem' }}>Adjuntar (opcional)</label>
+            <AdjuntosPendientes value={tareaAdjNuevos} onChange={setTareaAdjNuevos} />
+          </div>
           <button className="btn-primario" type="button" onClick={añadirTarea} style={{ marginTop: '0.6rem' }}>+ Tarea</button>
         </div>
       </section>
@@ -580,6 +591,10 @@ export default function EncargoDetalle() {
             <Desplegable style={{ width: 150 }} disabled={!nota.recordatorio}
               value={nota.aviso_min} onChange={(v) => setNota({ ...nota, aviso_min: Number(v) })}
               opciones={AVISOS.map((a) => ({ valor: a.v, etiqueta: a.t }))} />
+          </div>
+          <div style={{ marginTop: '0.5rem' }}>
+            <label className="placeholder" style={{ fontSize: '0.8rem' }}>Adjuntar (opcional)</label>
+            <AdjuntosPendientes value={notaAdjNuevos} onChange={setNotaAdjNuevos} />
           </div>
           <button className="btn-primario" type="submit" style={{ marginTop: '0.6rem' }}>+ Añadir nota</button>
         </form>

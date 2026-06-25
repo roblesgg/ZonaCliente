@@ -390,6 +390,15 @@ export async function subirAdjunto(file, ref, descripcion) {
   return data
 }
 
+// Sube una lista de adjuntos pendientes (archivos o enlaces) a un destino ya
+// creado (p. ej. la tarea/nota recién guardada).
+export async function subirPendientes(items, ref) {
+  for (const it of items || []) {
+    if (it.file) await subirAdjunto(it.file, ref, it.descripcion)
+    else if (it.url) await crearEnlace(it.url, ref, it.descripcion)
+  }
+}
+
 // Adjuntar un ENLACE (URL) en vez de un archivo.
 export async function crearEnlace(url, ref, descripcion) {
   const { data, error } = await supabase.from('adjuntos').insert({
